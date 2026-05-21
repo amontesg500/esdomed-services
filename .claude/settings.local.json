@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\Usuario\\\\Desktop\\\\esdomed-services\" -Force | Select-Object Name, @{Name=\"Type\"; Expression={if\\($_.PSIsContainer\\){\"Directory\"}else{\"File\"}}} | Format-Table -AutoSize)",
+      "PowerShell(Head *)",
+      "PowerShell(Get-Item *)",
+      "PowerShell([System.IO.Directory]::GetFileSystemEntries\\(\"C:\\\\Users\\\\Usuario\\\\Desktop\\\\esdomed-services\"\\) | ForEach-Object { [System.IO.Path]::GetFileName\\($_\\) })",
+      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --no-git)"
+    ]
+  }
+}

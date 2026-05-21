@@ -56,6 +56,8 @@ export interface NotificacionFallecido {
   entregaCertificadoEn?: Date;
   recibeDePs?: string;       // psicología / trabajo social
   recibeDePsEn?: Date;
+  familiarNombre?: string;
+  familiarDocumento?: string;
 }
 
 export type EstadoImpresion = "pendiente" | "impreso";

@@ -49,6 +49,13 @@ export interface NotificacionFallecido {
   confirmadoEn?: Date;
   confirmadoPor?: string;
   confirmadoPorNombre?: string;
+  // Seguimiento de productividad ESDOMED
+  digitaSimmow?: string;
+  digitaSimmowEn?: Date;
+  entregaCertificado?: string;
+  entregaCertificadoEn?: Date;
+  recibeDePs?: string;       // psicología / trabajo social
+  recibeDePsEn?: Date;
 }
 
 export type EstadoImpresion = "pendiente" | "impreso";

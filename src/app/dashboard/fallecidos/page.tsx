@@ -23,6 +23,7 @@ export default function DashboardFallecidosPage() {
   const { profile } = useAuth();
   const [notificaciones, setNotificaciones] = useState<NotificacionFallecido[]>([]);
   const [personal, setPersonal] = useState<UserProfile[]>([]);
+  const [personalPsTs, setPersonalPsTs] = useState<UserProfile[]>([]);
   const [filtro, setFiltro] = useState<"pendiente" | "confirmado" | "cert_pendiente" | "todos">("todos");
   const [selected, setSelected] = useState<NotificacionFallecido | null>(null);
   const [saving, setSaving] = useState(false);
@@ -40,6 +41,8 @@ export default function DashboardFallecidosPage() {
     );
     getDocs(query(collection(db, "usuarios"), where("role", "==", "esdomed")))
       .then(snap => setPersonal(snap.docs.map(d => ({ uid: d.id, ...d.data() } as UserProfile))));
+    getDocs(query(collection(db, "usuarios"), where("role", "in", ["psicologia", "trabajo_social"])))
+      .then(snap => setPersonalPsTs(snap.docs.map(d => ({ uid: d.id, ...d.data() } as UserProfile))));
     return unsub;
   }, []);
 
@@ -372,7 +375,7 @@ export default function DashboardFallecidosPage() {
                               className={selectCls}
                             >
                               <option value="">— Sin asignar</option>
-                              {personal.map(p => (
+                              {(col.key === "recibeDePs" ? personalPsTs : personal).map(p => (
                                 <option key={p.uid} value={p.nombre}>{p.nombre}</option>
                               ))}
                             </select>

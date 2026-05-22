@@ -1,4 +1,4 @@
-export type UserRole = "medico" | "esdomed";
+export type UserRole = "medico" | "esdomed" | "trabajo_social" | "psicologia" | "admin";
 
 export interface UserProfile {
   uid: string;

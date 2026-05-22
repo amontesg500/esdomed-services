@@ -230,13 +230,24 @@ export default function DashboardFallecidosPage() {
 
       {/* Panel de detalle */}
       {selectedLive && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl w-[95vw] max-w-5xl max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-3 md:p-5 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] flex flex-col">
 
-            <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between gap-3 flex-shrink-0">
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between gap-4 flex-shrink-0">
               <div>
-                <h2 className="font-bold text-slate-900 dark:text-slate-100 font-heading">{selectedLive.pacienteNombre}</h2>
-                <p className="text-xs text-slate-500 mt-0.5">Exp. {selectedLive.pacienteExpediente} · {selectedLive.servicio} · Cama {selectedLive.cama}</p>
+                <h2 className="font-bold text-lg text-slate-900 dark:text-slate-100 font-heading leading-tight">
+                  {selectedLive.pacienteNombre}
+                </h2>
+                <p className="text-xs text-slate-500 mt-1">
+                  Exp. {selectedLive.pacienteExpediente}
+                  <span className="mx-1.5 text-slate-300 dark:text-slate-700">·</span>
+                  {selectedLive.servicio}
+                  <span className="mx-1.5 text-slate-300 dark:text-slate-700">·</span>
+                  Cama {selectedLive.cama}
+                  <span className="mx-1.5 text-slate-300 dark:text-slate-700">·</span>
+                  Dr. {selectedLive.medicoNombre}
+                </p>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 <Badge estado={selectedLive.estado} />
@@ -247,26 +258,79 @@ export default function DashboardFallecidosPage() {
               </div>
             </div>
 
+            {/* Body — 3 columnas, sin scroll en desktop si hay espacio */}
             <div className="overflow-y-auto flex-1 p-5 md:p-6">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
 
-                {/* Datos del caso */}
-                <div className="space-y-4">
-                  <SectionTitle>Datos del caso</SectionTitle>
-                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-5 border border-slate-100 dark:border-slate-800 space-y-4">
-                    <InfoCell label="Fecha defunción" value={formatFecha(selectedLive.fechaDefuncion)} />
-                    <InfoCell label="Notificado por"  value={`Dr. ${selectedLive.medicoNombre}`} />
-                    <InfoCell label="Servicio"        value={selectedLive.medicoServicio} />
-                    {selectedLive.causaMuerte && <InfoCell label="Causa" value={selectedLive.causaMuerte} />}
+                {/* Col 1: Datos del caso + Familiar */}
+                <div className="space-y-5">
+
+                  {/* Datos del caso */}
+                  <div className="space-y-3">
+                    <SectionTitle>Datos del caso</SectionTitle>
+                    <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-x-4 gap-y-3">
+                      <InfoCell label="Fecha defunción" value={formatFecha(selectedLive.fechaDefuncion)} />
+                      <InfoCell label="Servicio médico"  value={selectedLive.medicoServicio} />
+                      <div className="col-span-2">
+                        <InfoCell label="Notificado por" value={`Dr. ${selectedLive.medicoNombre}`} />
+                      </div>
+                      {selectedLive.causaMuerte && (
+                        <div className="col-span-2">
+                          <InfoCell label="Causa de muerte" value={selectedLive.causaMuerte} />
+                        </div>
+                      )}
+                    </div>
                   </div>
+
+                  {/* Familiar */}
+                  <div className="space-y-3">
+                    <SectionTitle>Familiar</SectionTitle>
+                    <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-100 dark:border-slate-800 space-y-3">
+                      <div>
+                        <label className="block text-xs font-medium text-slate-500 mb-1.5">Nombre completo</label>
+                        <input
+                          type="text"
+                          value={familiarNombre}
+                          onChange={e => setFamiliarNombre(e.target.value)}
+                          placeholder="Nombre del familiar"
+                          className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-slate-500 mb-1.5">Documento de identidad</label>
+                        <input
+                          type="text"
+                          value={familiarDocumento}
+                          onChange={e => setFamiliarDocumento(e.target.value)}
+                          placeholder="Número de identidad"
+                          className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                        />
+                      </div>
+                      <button
+                        onClick={guardarFamiliar}
+                        disabled={savingFamiliar}
+                        className="w-full py-2 bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 dark:hover:bg-slate-600 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors shadow-sm"
+                      >
+                        {savingFamiliar ? "Guardando..." : "Guardar datos"}
+                      </button>
+                      {selectedLive.familiarNombre && (
+                        <p className="text-xs text-green-600 dark:text-green-400 flex items-start gap-1.5 bg-green-50 dark:bg-green-500/10 px-3 py-2 rounded-lg">
+                          <CheckCircle2 size={13} className="flex-shrink-0 mt-0.5" />
+                          <span>
+                            <span className="font-medium text-slate-900 dark:text-slate-100">{selectedLive.familiarNombre}</span>
+                            {selectedLive.familiarDocumento && <><br /><span className="opacity-75">{selectedLive.familiarDocumento}</span></>}
+                          </span>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
                 </div>
 
-                {/* Seguimiento */}
-                <div className="space-y-4">
+                {/* Col 2: Seguimiento — asignación de personas */}
+                <div className="space-y-3">
                   <SectionTitle>Seguimiento</SectionTitle>
-                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-5 border border-slate-100 dark:border-slate-800 space-y-4">
-
-                    {/* Asignación de personas */}
+                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-100 dark:border-slate-800 space-y-4">
                     {COLUMNAS_SEGUIMIENTO.map(col => {
                       const valor = selectedLive[col.key] as string | undefined;
                       const fecha = selectedLive[col.keyEn];
@@ -289,113 +353,70 @@ export default function DashboardFallecidosPage() {
                             <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                           </div>
                           {valor && fecha && (
-                            <p className="text-[11px] mt-1.5 flex items-center gap-1.5 bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 px-2 py-1 rounded-md w-fit">
-                              <CheckCircle2 size={12} />
+                            <p className="text-[11px] mt-1 flex items-center gap-1.5 bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 px-2 py-1 rounded-md w-fit">
+                              <CheckCircle2 size={11} />
                               {formatHora(fecha)}
                             </p>
                           )}
                         </div>
                       );
                     })}
-
-                    {/* Certificado */}
-                    <div className="border-t border-slate-200 dark:border-slate-700 pt-4 space-y-3">
-                      <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest">Certificado</p>
-
-                      {/* Estado de entrega */}
-                      <div>
-                        <label className="block text-xs font-medium text-slate-500 mb-1.5">Estado de entrega</label>
-                        <div className="relative">
-                          <select
-                            value={selectedLive.estadoEntregaCertificado ?? ""}
-                            disabled={updatingCell === "estadoEntregaCertificado"}
-                            onChange={e => actualizarCampo("estadoEntregaCertificado", e.target.value || null)}
-                            className={selectCls}
-                          >
-                            <option value="">— Sin definir</option>
-                            <option value="pendiente">Pendiente</option>
-                            <option value="entregado">Entregado</option>
-                          </select>
-                          <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                        </div>
-                      </div>
-
-                      {/* Tipo de certificado */}
-                      <div>
-                        <label className="block text-xs font-medium text-slate-500 mb-1.5">Tipo de certificado</label>
-                        <div className="relative">
-                          <select
-                            value={selectedLive.tipoCertificado ?? ""}
-                            disabled={updatingCell === "tipoCertificado"}
-                            onChange={e => actualizarCampo("tipoCertificado", e.target.value || null)}
-                            className={selectCls}
-                          >
-                            <option value="">— Sin definir</option>
-                            <option value="digital">Digital</option>
-                            <option value="manual">Manual</option>
-                          </select>
-                          <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                        </div>
-                      </div>
-
-                      {/* Checkbox FIEH */}
-                      <label className="flex items-start gap-2.5 cursor-pointer group">
-                        <input
-                          type="checkbox"
-                          checked={selectedLive.actualizoFieh ?? false}
-                          disabled={updatingCell === "actualizoFieh"}
-                          onChange={e => actualizarCampo("actualizoFieh", e.target.checked)}
-                          className="mt-0.5 w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 flex-shrink-0 cursor-pointer"
-                        />
-                        <span className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed group-hover:text-slate-800 dark:group-hover:text-slate-200 transition-colors">
-                          ¿Actualizó FIEH en Archivero Virtual y Datos en Simmow al momento de entregar certificado manual?{" "}
-                          <span className="text-slate-400 dark:text-slate-500">(Si es digital, omitir)</span>
-                        </span>
-                      </label>
-                    </div>
-
                   </div>
                 </div>
 
-                {/* Familiar */}
-                <div className="space-y-4">
-                  <SectionTitle>Familiar</SectionTitle>
-                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-5 border border-slate-100 dark:border-slate-800 space-y-4 flex flex-col h-[calc(100%-2rem)]">
+                {/* Col 3: Certificado */}
+                <div className="space-y-3">
+                  <SectionTitle>Certificado</SectionTitle>
+                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-100 dark:border-slate-800 space-y-4">
+
                     <div>
-                      <label className="block text-xs font-medium text-slate-500 mb-1.5">Nombre completo</label>
-                      <input
-                        type="text"
-                        value={familiarNombre}
-                        onChange={e => setFamiliarNombre(e.target.value)}
-                        placeholder="Nombre del familiar"
-                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
-                      />
+                      <label className="block text-xs font-medium text-slate-500 mb-1.5">Estado de entrega</label>
+                      <div className="relative">
+                        <select
+                          value={selectedLive.estadoEntregaCertificado ?? ""}
+                          disabled={updatingCell === "estadoEntregaCertificado"}
+                          onChange={e => actualizarCampo("estadoEntregaCertificado", e.target.value || null)}
+                          className={selectCls}
+                        >
+                          <option value="">— Sin definir</option>
+                          <option value="pendiente">Pendiente</option>
+                          <option value="entregado">Entregado</option>
+                        </select>
+                        <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                      </div>
                     </div>
+
                     <div>
-                      <label className="block text-xs font-medium text-slate-500 mb-1.5">Documento de identidad</label>
+                      <label className="block text-xs font-medium text-slate-500 mb-1.5">Tipo de certificado</label>
+                      <div className="relative">
+                        <select
+                          value={selectedLive.tipoCertificado ?? ""}
+                          disabled={updatingCell === "tipoCertificado"}
+                          onChange={e => actualizarCampo("tipoCertificado", e.target.value || null)}
+                          className={selectCls}
+                        >
+                          <option value="">— Sin definir</option>
+                          <option value="digital">Digital</option>
+                          <option value="manual">Manual</option>
+                        </select>
+                        <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                      </div>
+                    </div>
+
+                    <label className="flex items-start gap-2.5 cursor-pointer group select-none">
                       <input
-                        type="text"
-                        value={familiarDocumento}
-                        onChange={e => setFamiliarDocumento(e.target.value)}
-                        placeholder="Número de identidad"
-                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                        type="checkbox"
+                        checked={selectedLive.actualizoFieh ?? false}
+                        disabled={updatingCell === "actualizoFieh"}
+                        onChange={e => actualizarCampo("actualizoFieh", e.target.checked)}
+                        className="mt-0.5 w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 flex-shrink-0 cursor-pointer accent-blue-600"
                       />
-                    </div>
-                    <div className="mt-auto pt-2">
-                      <button
-                        onClick={guardarFamiliar}
-                        disabled={savingFamiliar}
-                        className="w-full py-2.5 bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 dark:hover:bg-slate-600 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors shadow-sm"
-                      >
-                        {savingFamiliar ? "Guardando..." : "Guardar datos"}
-                      </button>
-                      {selectedLive.familiarNombre && (
-                        <p className="text-xs text-green-600 dark:text-green-400 flex items-start gap-1.5 mt-3 bg-green-50 dark:bg-green-500/10 p-2 rounded-md">
-                          <CheckCircle2 size={14} className="flex-shrink-0 mt-0.5" />
-                          <span>Guardado:<br/><span className="font-medium text-slate-900 dark:text-slate-100">{selectedLive.familiarNombre}</span><br/><span className="opacity-80">{selectedLive.familiarDocumento}</span></span>
-                        </p>
-                      )}
-                    </div>
+                      <span className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed group-hover:text-slate-900 dark:group-hover:text-slate-200 transition-colors">
+                        ¿Actualizó FIEH en Archivero Virtual y Datos en Simmow al momento de entregar certificado manual?
+                        <span className="block text-slate-400 dark:text-slate-500 mt-0.5">(Si es digital, omitir)</span>
+                      </span>
+                    </label>
+
                   </div>
                 </div>
 
@@ -404,7 +425,7 @@ export default function DashboardFallecidosPage() {
 
             {/* Footer: confirmar */}
             {selectedLive.estado === "pendiente" && (
-              <div className="p-4 border-t border-slate-200 dark:border-slate-800 flex-shrink-0">
+              <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-800 flex-shrink-0">
                 <button onClick={confirmar} disabled={saving}
                   className="w-full py-2.5 text-sm font-semibold text-white bg-green-700 rounded-xl hover:bg-green-600 disabled:opacity-50 transition-colors">
                   {saving ? "Confirmando..." : "Confirmar de leído y notificado"}

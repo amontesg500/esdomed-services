@@ -292,7 +292,7 @@ export default function DashboardFallecidosPage() {
       {/* Modal de detalle — tabs */}
       {selectedLive && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] flex flex-col">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
 
             {/* Header */}
             <div className="px-5 pt-5 pb-0 flex-shrink-0">

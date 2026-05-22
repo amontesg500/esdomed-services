@@ -199,7 +199,7 @@ export default function PsicologiaFallecidosPage() {
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">Datos del caso</p>
                 <InfoCell label="Fecha defunción"  value={formatFecha(selectedLive.fechaDefuncion)} />
                 <InfoCell label="Notificado por"   value={`Dr. ${selectedLive.medicoNombre}`} />
-                <InfoCell label="Servicio"         value={selectedLive.medicoServicio} />
+                <InfoCell label="Servicio"         value={selectedLive.servicio} />
                 {selectedLive.causaMuerte && <InfoCell label="Causa" value={selectedLive.causaMuerte} />}
               </div>
 

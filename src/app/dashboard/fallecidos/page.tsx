@@ -179,8 +179,8 @@ export default function DashboardFallecidosPage() {
   const TABS: { id: ActiveTab; label: string }[] = [
     { id: "expediente",  label: "Expediente"  },
     { id: "seguimiento", label: "Seguimiento" },
-    { id: "entrega",     label: "Entrega"     },
     { id: "certificado", label: "Certificado" },
+    { id: "entrega",     label: "Entrega"     },
   ];
 
   const isLocked    = !!(selectedLive?.tramiteCerrado && !selectedLive.tramiteDesbloqueado);
@@ -455,7 +455,7 @@ export default function DashboardFallecidosPage() {
               {/* ── Tab: Seguimiento ── */}
               {activeTab === "seguimiento" && (
                 <div className="space-y-4">
-                  {COLUMNAS_SEGUIMIENTO.filter(col => col.key !== "entregaCertificado").map(col => {
+                  {COLUMNAS_SEGUIMIENTO.filter(col => col.key !== "entregaCertificado" && col.key !== "recibeDePs").map(col => {
                     const valor    = selectedLive[col.key] as string | undefined;
                     const fecha    = selectedLive[col.keyEn];
                     const isLoading = updatingCell === col.key;
@@ -470,18 +470,50 @@ export default function DashboardFallecidosPage() {
                             className={selectCls}
                           >
                             <option value="">— Sin asignar</option>
-                            {(col.key === "recibeDePs" ? personalPsTs : personal).map(p => (
+                            {personal.map(p => (
                               <option key={p.uid} value={p.nombre}>{p.nombre}</option>
                             ))}
                           </select>
                           <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                         </div>
-                        {valor && fecha && col.key !== "recibeDePs" && (
+                        {valor && fecha && (
                           <p className="text-[11px] mt-1.5 flex items-center gap-1.5 bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 px-2 py-1 rounded-md w-fit">
                             <CheckCircle2 size={11} /> {formatHora(fecha)}
                           </p>
                         )}
-                        {col.key === "recibeDePs" && valor && (
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* ── Tab: Entrega ── */}
+              {activeTab === "entrega" && (
+                <div className="space-y-5">
+
+                  {/* Recibe Psic./TS */}
+                  {(() => {
+                    const col = COLUMNAS_SEGUIMIENTO.find(c => c.key === "recibeDePs")!;
+                    const valor = selectedLive[col.key] as string | undefined;
+                    const isLoading = updatingCell === col.key;
+                    return (
+                      <div>
+                        <label className="block text-xs font-medium text-slate-500 mb-1.5">{col.label}</label>
+                        <div className="relative">
+                          <select
+                            value={valor ?? ""}
+                            disabled={isLoading || isLocked}
+                            onChange={e => asignar(col.key, e.target.value)}
+                            className={selectCls}
+                          >
+                            <option value="">— Sin asignar</option>
+                            {personalPsTs.map(p => (
+                              <option key={p.uid} value={p.nombre}>{p.nombre}</option>
+                            ))}
+                          </select>
+                          <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                        </div>
+                        {valor && (
                           <div className="mt-1.5">
                             {selectedLive.recibeDePsConfirmado ? (
                               <p className="text-[11px] flex items-center gap-1.5 text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-500/10 px-2 py-1 rounded-md w-fit">
@@ -498,13 +530,7 @@ export default function DashboardFallecidosPage() {
                         )}
                       </div>
                     );
-                  })}
-                </div>
-              )}
-
-              {/* ── Tab: Entrega ── */}
-              {activeTab === "entrega" && (
-                <div className="space-y-5">
+                  })()}
 
                   {/* Quién entregó */}
                   <div>
@@ -526,6 +552,59 @@ export default function DashboardFallecidosPage() {
                     {selectedLive.entregaCertificado && selectedLive.entregaCertificadoEn && (
                       <p className="text-[11px] mt-1.5 flex items-center gap-1.5 bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 px-2 py-1 rounded-md w-fit">
                         <CheckCircle2 size={11} /> {formatHora(selectedLive.entregaCertificadoEn)}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* FIEH */}
+                  <div className="space-y-2">
+                    <label className="block text-xs font-medium text-slate-500">
+                      ¿Actualizó FIEH en Archivero Virtual y Datos en Simmow?
+                      <span className="block font-normal text-slate-400 dark:text-slate-500 mt-0.5">
+                        Aplica solo para certificados manuales
+                      </span>
+                    </label>
+                    <label className={`flex items-center gap-2.5 select-none ${isLocked ? "opacity-50" : "cursor-pointer"}`}>
+                      <input
+                        type="checkbox"
+                        checked={fiehChequeado}
+                        disabled={isLocked}
+                        onChange={e => {
+                          if (!e.target.checked) {
+                            actualizarCampo("actualizoFieh", null);
+                            setFiehPendiente(false);
+                          } else {
+                            setFiehPendiente(true);
+                          }
+                        }}
+                        className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 accent-blue-600 flex-shrink-0 disabled:cursor-not-allowed"
+                      />
+                      <span className="text-sm text-slate-700 dark:text-slate-300">Sí, se actualizó</span>
+                    </label>
+                    {fiehChequeado && (
+                      <div className="relative">
+                        <select
+                          value={fiehNombreGuardado ?? ""}
+                          disabled={isLocked || updatingCell === "actualizoFieh"}
+                          onChange={e => {
+                            if (e.target.value) {
+                              actualizarCampo("actualizoFieh", e.target.value);
+                              setFiehPendiente(false);
+                            }
+                          }}
+                          className={selectCls}
+                        >
+                          <option value="">— Seleccionar quién actualizó</option>
+                          {personal.map(p => (
+                            <option key={p.uid} value={p.nombre}>{p.nombre}</option>
+                          ))}
+                        </select>
+                        <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                      </div>
+                    )}
+                    {fiehNombreGuardado && (
+                      <p className="text-[11px] flex items-center gap-1.5 text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-500/10 px-2 py-1 rounded-md w-fit">
+                        <CheckCircle2 size={11} /> Actualizado por {fiehNombreGuardado}
                       </p>
                     )}
                   </div>
@@ -637,58 +716,6 @@ export default function DashboardFallecidosPage() {
                     </div>
                   </div>
 
-                  {/* FIEH */}
-                  <div className="space-y-2">
-                    <label className="block text-xs font-medium text-slate-500">
-                      ¿Actualizó FIEH en Archivero Virtual y Datos en Simmow?
-                      <span className="block font-normal text-slate-400 dark:text-slate-500 mt-0.5">
-                        Aplica solo para certificados manuales
-                      </span>
-                    </label>
-                    <label className={`flex items-center gap-2.5 select-none ${isLocked ? "opacity-50" : "cursor-pointer"}`}>
-                      <input
-                        type="checkbox"
-                        checked={fiehChequeado}
-                        disabled={isLocked}
-                        onChange={e => {
-                          if (!e.target.checked) {
-                            actualizarCampo("actualizoFieh", null);
-                            setFiehPendiente(false);
-                          } else {
-                            setFiehPendiente(true);
-                          }
-                        }}
-                        className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 accent-blue-600 flex-shrink-0 disabled:cursor-not-allowed"
-                      />
-                      <span className="text-sm text-slate-700 dark:text-slate-300">Sí, se actualizó</span>
-                    </label>
-                    {fiehChequeado && (
-                      <div className="relative">
-                        <select
-                          value={fiehNombreGuardado ?? ""}
-                          disabled={isLocked || updatingCell === "actualizoFieh"}
-                          onChange={e => {
-                            if (e.target.value) {
-                              actualizarCampo("actualizoFieh", e.target.value);
-                              setFiehPendiente(false);
-                            }
-                          }}
-                          className={selectCls}
-                        >
-                          <option value="">— Seleccionar quién actualizó</option>
-                          {personal.map(p => (
-                            <option key={p.uid} value={p.nombre}>{p.nombre}</option>
-                          ))}
-                        </select>
-                        <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                      </div>
-                    )}
-                    {fiehNombreGuardado && (
-                      <p className="text-[11px] flex items-center gap-1.5 text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-500/10 px-2 py-1 rounded-md w-fit">
-                        <CheckCircle2 size={11} /> Actualizado por {fiehNombreGuardado}
-                      </p>
-                    )}
-                  </div>
                 </div>
               )}
             </div>
@@ -701,7 +728,7 @@ export default function DashboardFallecidosPage() {
                   {saving ? "Confirmando..." : "Confirmar de leído y notificado"}
                 </button>
               )}
-              {puedeCerrar && (
+              {puedeCerrar && activeTab === "entrega" && (
                 <button onClick={cerrarTramite} disabled={cerrando}
                   className="w-full py-2.5 text-sm font-semibold text-white bg-slate-800 dark:bg-slate-700 rounded-xl hover:bg-slate-700 dark:hover:bg-slate-600 disabled:opacity-50 transition-colors flex items-center justify-center gap-2">
                   <Lock size={14} />

@@ -62,13 +62,17 @@ export default function DashboardUsuariosPage() {
   const roleColors = {
     esdomed: "bg-violet-50 dark:bg-violet-950 text-violet-600 dark:text-violet-400 border-violet-200 dark:border-violet-900",
     trabajo_social: "bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900",
-    medico: "bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-900"
+    medico: "bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-900",
+    psicologia: "bg-teal-50 dark:bg-teal-950 text-teal-600 dark:text-teal-400 border-teal-200 dark:border-teal-900",
+    admin: "bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 border-red-200 dark:border-red-900"
   };
 
   const roleLabels = {
     esdomed: "ESDOMED",
     trabajo_social: "Trabajo Social",
-    medico: "Médico"
+    medico: "Médico",
+    psicologia: "Psicología",
+    admin: "Administrador Superusuario"
   };
 
   return (
@@ -108,6 +112,8 @@ export default function DashboardUsuariosPage() {
                 <option value="medico">Médico</option>
                 <option value="esdomed">Personal ESDOMED</option>
                 <option value="trabajo_social">Trabajo Social</option>
+                <option value="psicologia">Psicología</option>
+                <option value="admin">Administrador Superusuario</option>
               </select>
             </div>
             {form.userRole === "medico" && (

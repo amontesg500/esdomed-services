@@ -6,7 +6,7 @@ import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { NotificacionFallecido, UserProfile } from "@/types";
 import { Badge } from "@/components/ui/Badge";
-import { HeartPulse, Clock, X, ChevronDown, CheckCircle2 } from "lucide-react";
+import { HeartPulse, Clock, X, ChevronDown, CheckCircle2, FileWarning } from "lucide-react";
 
 const COLUMNAS_SEGUIMIENTO = [
   { key: "digitaSimmow",       keyEn: "digitaSimmowEn",       label: "Digita SIMMOW" },
@@ -23,12 +23,14 @@ export default function DashboardFallecidosPage() {
   const { profile } = useAuth();
   const [notificaciones, setNotificaciones] = useState<NotificacionFallecido[]>([]);
   const [personal, setPersonal] = useState<UserProfile[]>([]);
-  const [filtro, setFiltro] = useState<"pendiente" | "confirmado" | "todos">("todos");
+  const [filtro, setFiltro] = useState<"pendiente" | "confirmado" | "cert_pendiente" | "todos">("todos");
   const [selected, setSelected] = useState<NotificacionFallecido | null>(null);
   const [saving, setSaving] = useState(false);
   const [updatingCell, setUpdatingCell] = useState<string | null>(null);
   const [familiarNombre, setFamiliarNombre] = useState("");
-  const [familiarDocumento, setFamiliarDocumento] = useState("");
+  const [familiarDui, setFamiliarDui] = useState("");
+  const [familiarTelefono, setFamiliarTelefono] = useState("");
+  const [familiarParentesco, setFamiliarParentesco] = useState("");
   const [savingFamiliar, setSavingFamiliar] = useState(false);
 
   useEffect(() => {
@@ -43,10 +45,14 @@ export default function DashboardFallecidosPage() {
 
   useEffect(() => {
     setFamiliarNombre(selected?.familiarNombre ?? "");
-    setFamiliarDocumento(selected?.familiarDocumento ?? "");
+    setFamiliarDui(selected?.familiarDui ?? "");
+    setFamiliarTelefono(selected?.familiarTelefono ?? "");
+    setFamiliarParentesco(selected?.familiarParentesco ?? "");
   }, [selected?.id]);
 
-  const filtered = filtro === "todos" ? notificaciones : notificaciones.filter(n => n.estado === filtro);
+  const filtered = filtro === "todos"         ? notificaciones
+    : filtro === "cert_pendiente"             ? notificaciones.filter(n => n.estadoEntregaCertificado === "pendiente")
+    : notificaciones.filter(n => n.estado === filtro);
 
   const confirmar = async () => {
     if (!selected?.id || !profile) return;
@@ -81,8 +87,10 @@ export default function DashboardFallecidosPage() {
     if (!selected?.id) return;
     setSavingFamiliar(true);
     await updateDoc(doc(db, "notificaciones_fallecidos", selected.id), {
-      familiarNombre:    familiarNombre || null,
-      familiarDocumento: familiarDocumento || null,
+      familiarNombre:     familiarNombre     || null,
+      familiarDui:        familiarDui        || null,
+      familiarTelefono:   familiarTelefono   || null,
+      familiarParentesco: familiarParentesco || null,
     });
     setSavingFamiliar(false);
   };
@@ -111,7 +119,8 @@ export default function DashboardFallecidosPage() {
     ).length,
   })).filter(p => p.total > 0).sort((a, b) => b.total - a.total);
 
-  const pendientes = notificaciones.filter(n => n.estado === "pendiente").length;
+  const pendientes     = notificaciones.filter(n => n.estado === "pendiente").length;
+  const certPendientes = notificaciones.filter(n => n.estadoEntregaCertificado === "pendiente").length;
   const selectedLive = selected ? notificaciones.find(n => n.id === selected.id) ?? selected : null;
 
   return (
@@ -125,12 +134,27 @@ export default function DashboardFallecidosPage() {
           </div>
           <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100 font-heading">Notificaciones de fallecidos</h1>
         </div>
-        {pendientes > 0 && (
-          <div className="flex items-center gap-1.5 text-sm text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-900 px-3 py-1.5 rounded-xl">
-            <Clock size={14} />
-            {pendientes} sin confirmar
-          </div>
-        )}
+        <div className="flex items-center gap-2 flex-wrap">
+          {pendientes > 0 && (
+            <div className="flex items-center gap-1.5 text-sm text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-900 px-3 py-1.5 rounded-xl">
+              <Clock size={14} />
+              {pendientes} sin confirmar
+            </div>
+          )}
+          {certPendientes > 0 && (
+            <button
+              onClick={() => setFiltro(filtro === "cert_pendiente" ? "todos" : "cert_pendiente")}
+              className={`flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-xl border transition-colors ${
+                filtro === "cert_pendiente"
+                  ? "bg-orange-600 text-white border-orange-600"
+                  : "text-orange-700 dark:text-orange-400 bg-orange-50 dark:bg-orange-950 border-orange-200 dark:border-orange-900 hover:bg-orange-100 dark:hover:bg-orange-900"
+              }`}
+            >
+              <FileWarning size={14} />
+              {certPendientes} cert. pendientes
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Productividad */}
@@ -155,7 +179,12 @@ export default function DashboardFallecidosPage() {
 
       {/* Filtros */}
       <div className="flex flex-wrap items-center gap-2">
-        {[{ label: "Todos", value: "todos" }, { label: "Pendientes", value: "pendiente" }, { label: "Confirmados", value: "confirmado" }].map(f => (
+        {[
+          { label: "Todos",           value: "todos"          },
+          { label: "Pendientes",      value: "pendiente"      },
+          { label: "Confirmados",     value: "confirmado"     },
+          { label: "Cert. pendiente", value: "cert_pendiente" },
+        ].map(f => (
           <button key={f.value} onClick={() => setFiltro(f.value as typeof filtro)}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
               filtro === f.value
@@ -205,12 +234,19 @@ export default function DashboardFallecidosPage() {
                         <Badge estado={n.estado} />
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex items-center gap-1.5">
-                          {COLUMNAS_SEGUIMIENTO.map(col => (
-                            <div key={col.key} title={col.label}
-                              className={`w-2 h-2 rounded-full ${!!n[col.key] ? "bg-green-500" : "bg-slate-300 dark:bg-slate-600"}`} />
-                          ))}
-                          <span className="text-xs text-slate-500 ml-1">{pasos}/{COLUMNAS_SEGUIMIENTO.length}</span>
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-1.5">
+                            {COLUMNAS_SEGUIMIENTO.map(col => (
+                              <div key={col.key} title={col.label}
+                                className={`w-2 h-2 rounded-full ${!!n[col.key] ? "bg-green-500" : "bg-slate-300 dark:bg-slate-600"}`} />
+                            ))}
+                            <span className="text-xs text-slate-500 ml-1">{pasos}/{COLUMNAS_SEGUIMIENTO.length}</span>
+                          </div>
+                          {n.estadoEntregaCertificado === "pendiente" && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-orange-700 dark:text-orange-400 bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-900 px-1.5 py-0.5 rounded-md">
+                              <FileWarning size={10} /> Cert. pendiente
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="px-4 py-3 text-right">
@@ -285,26 +321,10 @@ export default function DashboardFallecidosPage() {
                   <div className="space-y-3">
                     <SectionTitle>Familiar</SectionTitle>
                     <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-100 dark:border-slate-800 space-y-3">
-                      <div>
-                        <label className="block text-xs font-medium text-slate-500 mb-1.5">Nombre completo</label>
-                        <input
-                          type="text"
-                          value={familiarNombre}
-                          onChange={e => setFamiliarNombre(e.target.value)}
-                          placeholder="Nombre del familiar"
-                          className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-slate-500 mb-1.5">Documento de identidad</label>
-                        <input
-                          type="text"
-                          value={familiarDocumento}
-                          onChange={e => setFamiliarDocumento(e.target.value)}
-                          placeholder="Número de identidad"
-                          className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
-                        />
-                      </div>
+                      <FamiliarInput label="Nombre completo"  value={familiarNombre}     onChange={setFamiliarNombre}     placeholder="Nombre del familiar" />
+                      <FamiliarInput label="DUI"              value={familiarDui}         onChange={setFamiliarDui}         placeholder="00000000-0" />
+                      <FamiliarInput label="Teléfono"         value={familiarTelefono}    onChange={setFamiliarTelefono}    placeholder="0000-0000" />
+                      <FamiliarInput label="Parentesco"       value={familiarParentesco}  onChange={setFamiliarParentesco}  placeholder="Ej: Hijo, Cónyuge…" />
                       <button
                         onClick={guardarFamiliar}
                         disabled={savingFamiliar}
@@ -313,13 +333,15 @@ export default function DashboardFallecidosPage() {
                         {savingFamiliar ? "Guardando..." : "Guardar datos"}
                       </button>
                       {selectedLive.familiarNombre && (
-                        <p className="text-xs text-green-600 dark:text-green-400 flex items-start gap-1.5 bg-green-50 dark:bg-green-500/10 px-3 py-2 rounded-lg">
-                          <CheckCircle2 size={13} className="flex-shrink-0 mt-0.5" />
-                          <span>
-                            <span className="font-medium text-slate-900 dark:text-slate-100">{selectedLive.familiarNombre}</span>
-                            {selectedLive.familiarDocumento && <><br /><span className="opacity-75">{selectedLive.familiarDocumento}</span></>}
-                          </span>
-                        </p>
+                        <div className="bg-green-50 dark:bg-green-500/10 px-3 py-2.5 rounded-lg space-y-1">
+                          <p className="flex items-center gap-1.5 text-xs font-semibold text-green-700 dark:text-green-400">
+                            <CheckCircle2 size={13} /> Datos guardados
+                          </p>
+                          <p className="text-xs text-slate-700 dark:text-slate-300 font-medium">{selectedLive.familiarNombre}</p>
+                          {selectedLive.familiarDui        && <p className="text-xs text-slate-500">DUI: {selectedLive.familiarDui}</p>}
+                          {selectedLive.familiarTelefono   && <p className="text-xs text-slate-500">Tel: {selectedLive.familiarTelefono}</p>}
+                          {selectedLive.familiarParentesco && <p className="text-xs text-slate-500">{selectedLive.familiarParentesco}</p>}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -453,6 +475,23 @@ function InfoCell({ label, value, className = "" }: { label: string; value: stri
     <div className={className}>
       <p className="text-xs text-slate-500">{label}</p>
       <p className="text-slate-800 dark:text-slate-200 font-medium mt-0.5">{value}</p>
+    </div>
+  );
+}
+
+function FamiliarInput({ label, value, onChange, placeholder }: {
+  label: string; value: string; onChange: (v: string) => void; placeholder?: string;
+}) {
+  return (
+    <div>
+      <label className="block text-xs font-medium text-slate-500 mb-1.5">{label}</label>
+      <input
+        type="text"
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+      />
     </div>
   );
 }

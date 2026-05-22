@@ -62,7 +62,9 @@ export interface NotificacionFallecido {
   tipoCertificado?: "digital" | "manual";
   actualizoFieh?: boolean;
   familiarNombre?: string;
-  familiarDocumento?: string;
+  familiarDui?: string;
+  familiarTelefono?: string;
+  familiarParentesco?: string;
 }
 
 export type EstadoImpresion = "pendiente" | "impreso";

@@ -65,7 +65,7 @@ export interface NotificacionFallecido {
   tramitaDefuncionEn?: Date;
   estadoEntregaCertificado?: "pendiente" | "entregado";
   tipoCertificado?: "digital" | "manual";
-  actualizoFieh?: boolean;
+  actualizoFieh?: boolean | string;
   familiarNombre?: string;
   familiarDui?: string;
   familiarTelefono?: string;

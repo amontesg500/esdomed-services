@@ -18,6 +18,7 @@ type CampoSeguimiento = typeof COLUMNAS_SEGUIMIENTO[number]["key"];
 
 export default function DashboardFallecidosPage() {
   const { profile } = useAuth();
+  const isPsicologia = profile?.role === "psicologia";
   const [notificaciones, setNotificaciones] = useState<NotificacionFallecido[]>([]);
   const [personal, setPersonal] = useState<UserProfile[]>([]);
   const [filtro, setFiltro] = useState<"pendiente" | "confirmado" | "todos">("todos");
@@ -27,6 +28,7 @@ export default function DashboardFallecidosPage() {
   const [familiarNombre, setFamiliarNombre] = useState("");
   const [familiarDocumento, setFamiliarDocumento] = useState("");
   const [savingFamiliar, setSavingFamiliar] = useState(false);
+  const [savingVisto, setSavingVisto] = useState(false);
 
   useEffect(() => {
     const q = query(collection(db, "notificaciones_fallecidos"), orderBy("creadoEn", "desc"));
@@ -78,6 +80,16 @@ export default function DashboardFallecidosPage() {
     setSavingFamiliar(false);
   };
 
+  const confirmarVisto = async () => {
+    if (!selected?.id || !profile) return;
+    setSavingVisto(true);
+    await updateDoc(doc(db, "notificaciones_fallecidos", selected.id), {
+      recibeDePs:   profile.nombre,
+      recibeDePsEn: Timestamp.now(),
+    });
+    setSavingVisto(false);
+  };
+
   const formatFecha = (ts: unknown) => {
     if (!ts) return "—";
     const d = (ts as { toDate?: () => Date }).toDate?.() ?? new Date(ts as string);
@@ -126,7 +138,7 @@ export default function DashboardFallecidosPage() {
       </div>
 
       {/* Productividad */}
-      {productividad.length > 0 && (
+      {!isPsicologia && productividad.length > 0 && (
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
           <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-3">Productividad del equipo</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
@@ -260,7 +272,7 @@ export default function DashboardFallecidosPage() {
                   </div>
                 </div>
 
-                {/* Seguimiento ESDOMED */}
+                {/* Seguimiento */}
                 <div className="space-y-4">
                   <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest flex items-center gap-2">
                     <span className="w-5 h-px bg-slate-200 dark:bg-slate-700"></span>
@@ -275,22 +287,28 @@ export default function DashboardFallecidosPage() {
                       return (
                         <div key={col.key}>
                           <label className="block text-xs font-medium text-slate-500 mb-1.5">{col.label}</label>
-                          <div className="relative">
-                            <select
-                              value={valor ?? ""}
-                              disabled={loading}
-                              onChange={e => asignar(col.key, e.target.value)}
-                              className="w-full appearance-none bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg pl-3 pr-8 py-2 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 cursor-pointer shadow-sm"
-                            >
-                              <option value="">— Sin asignar</option>
-                              {personal.map(p => (
-                                <option key={p.uid} value={p.nombre}>{p.nombre}</option>
-                              ))}
-                            </select>
-                            <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                          </div>
+                          {isPsicologia ? (
+                            <p className="text-sm text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 shadow-sm">
+                              {valor || <span className="text-slate-400">— Sin asignar</span>}
+                            </p>
+                          ) : (
+                            <div className="relative">
+                              <select
+                                value={valor ?? ""}
+                                disabled={loading}
+                                onChange={e => asignar(col.key, e.target.value)}
+                                className="w-full appearance-none bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg pl-3 pr-8 py-2 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 cursor-pointer shadow-sm"
+                              >
+                                <option value="">— Sin asignar</option>
+                                {personal.map(p => (
+                                  <option key={p.uid} value={p.nombre}>{p.nombre}</option>
+                                ))}
+                              </select>
+                              <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                            </div>
+                          )}
                           {valor && fecha && (
-                            <p className="text-[11px] text-slate-400 mt-1.5 flex items-center gap-1.5 bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 px-2 py-1 rounded-md w-fit">
+                            <p className="text-[11px] mt-1.5 flex items-center gap-1.5 bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 px-2 py-1 rounded-md w-fit">
                               <CheckCircle2 size={12} />
                               {formatHora(fecha)}
                             </p>
@@ -302,55 +320,87 @@ export default function DashboardFallecidosPage() {
                 </div>
 
                 {/* Familiar que retira el certificado */}
-                <div className="space-y-4">
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                    <span className="w-5 h-px bg-slate-200 dark:bg-slate-700"></span>
-                    Familiar
-                    <span className="flex-1 h-px bg-slate-200 dark:bg-slate-700"></span>
-                  </p>
-                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-5 border border-slate-100 dark:border-slate-800 space-y-4 flex flex-col h-[calc(100%-2rem)]">
-                    <div>
-                      <label className="block text-xs font-medium text-slate-500 mb-1.5">Nombre completo</label>
-                      <input
-                        type="text"
-                        value={familiarNombre}
-                        onChange={e => setFamiliarNombre(e.target.value)}
-                        placeholder="Nombre del familiar"
-                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-500 mb-1.5">Documento de identidad</label>
-                      <input
-                        type="text"
-                        value={familiarDocumento}
-                        onChange={e => setFamiliarDocumento(e.target.value)}
-                        placeholder="Número de identidad"
-                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
-                      />
-                    </div>
-                    <div className="mt-auto pt-2">
-                      <button
-                        onClick={guardarFamiliar}
-                        disabled={savingFamiliar}
-                        className="w-full py-2.5 bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 dark:hover:bg-slate-600 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors shadow-sm"
-                      >
-                        {savingFamiliar ? "Guardando..." : "Guardar datos"}
-                      </button>
-                      {selectedLive.familiarNombre && (
-                        <p className="text-xs text-green-600 dark:text-green-400 flex items-start gap-1.5 mt-3 bg-green-50 dark:bg-green-500/10 p-2 rounded-md">
-                          <CheckCircle2 size={14} className="flex-shrink-0 mt-0.5" /> 
-                          <span>Guardado:<br/><span className="font-medium text-slate-900 dark:text-slate-100">{selectedLive.familiarNombre}</span><br/><span className="opacity-80">{selectedLive.familiarDocumento}</span></span>
+                {isPsicologia ? (
+                  <div className="space-y-4">
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                      <span className="w-5 h-px bg-slate-200 dark:bg-slate-700"></span>
+                      Notificación Psicología
+                      <span className="flex-1 h-px bg-slate-200 dark:bg-slate-700"></span>
+                    </p>
+                    <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-5 border border-slate-100 dark:border-slate-800 space-y-4">
+                      {selectedLive.recibeDePs ? (
+                        <p className="text-xs text-green-600 dark:text-green-400 flex items-start gap-1.5 bg-green-50 dark:bg-green-500/10 p-3 rounded-lg">
+                          <CheckCircle2 size={14} className="flex-shrink-0 mt-0.5" />
+                          <span>
+                            Confirmado por <span className="font-semibold">{selectedLive.recibeDePs}</span>
+                            {selectedLive.recibeDePsEn && <><br /><span className="opacity-80">{formatHora(selectedLive.recibeDePsEn)}</span></>}
+                          </span>
                         </p>
+                      ) : (
+                        <p className="text-sm text-slate-500">Aún no confirmado por Psicología.</p>
+                      )}
+                      {!selectedLive.recibeDePs && (
+                        <button
+                          onClick={confirmarVisto}
+                          disabled={savingVisto}
+                          className="w-full py-2.5 bg-rose-600 hover:bg-rose-500 text-white text-sm font-semibold rounded-xl disabled:opacity-50 transition-colors"
+                        >
+                          {savingVisto ? "Confirmando..." : "Confirmar visto por Psicología"}
+                        </button>
                       )}
                     </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="space-y-4">
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                      <span className="w-5 h-px bg-slate-200 dark:bg-slate-700"></span>
+                      Familiar
+                      <span className="flex-1 h-px bg-slate-200 dark:bg-slate-700"></span>
+                    </p>
+                    <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-5 border border-slate-100 dark:border-slate-800 space-y-4 flex flex-col h-[calc(100%-2rem)]">
+                      <div>
+                        <label className="block text-xs font-medium text-slate-500 mb-1.5">Nombre completo</label>
+                        <input
+                          type="text"
+                          value={familiarNombre}
+                          onChange={e => setFamiliarNombre(e.target.value)}
+                          placeholder="Nombre del familiar"
+                          className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-slate-500 mb-1.5">Documento de identidad</label>
+                        <input
+                          type="text"
+                          value={familiarDocumento}
+                          onChange={e => setFamiliarDocumento(e.target.value)}
+                          placeholder="Número de identidad"
+                          className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                        />
+                      </div>
+                      <div className="mt-auto pt-2">
+                        <button
+                          onClick={guardarFamiliar}
+                          disabled={savingFamiliar}
+                          className="w-full py-2.5 bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 dark:hover:bg-slate-600 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors shadow-sm"
+                        >
+                          {savingFamiliar ? "Guardando..." : "Guardar datos"}
+                        </button>
+                        {selectedLive.familiarNombre && (
+                          <p className="text-xs text-green-600 dark:text-green-400 flex items-start gap-1.5 mt-3 bg-green-50 dark:bg-green-500/10 p-2 rounded-md">
+                            <CheckCircle2 size={14} className="flex-shrink-0 mt-0.5" />
+                            <span>Guardado:<br/><span className="font-medium text-slate-900 dark:text-slate-100">{selectedLive.familiarNombre}</span><br/><span className="opacity-80">{selectedLive.familiarDocumento}</span></span>
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Footer: confirmar */}
-            {selectedLive.estado === "pendiente" && (
+            {/* Footer: confirmar (solo ESDOMED) */}
+            {!isPsicologia && selectedLive.estado === "pendiente" && (
               <div className="p-4 border-t border-slate-200 dark:border-slate-800 flex-shrink-0">
                 <button onClick={confirmar} disabled={saving}
                   className="w-full py-2.5 text-sm font-semibold text-white bg-green-700 rounded-xl hover:bg-green-600 disabled:opacity-50 transition-colors">

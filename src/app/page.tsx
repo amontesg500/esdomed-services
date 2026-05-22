@@ -11,8 +11,8 @@ export default function Home() {
   useEffect(() => {
     if (loading) return;
     if (!user) router.replace("/login");
-    else if (profile?.role === "esdomed") router.replace("/dashboard");
-    else router.replace("/medico");
+    else if (profile?.role === "medico") router.replace("/medico");
+    else if (profile) router.replace("/dashboard");
   }, [user, profile, loading, router]);
 
   return (

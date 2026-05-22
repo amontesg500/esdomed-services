@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, query, where, orderBy, onSnapshot, addDoc, Timestamp } from "firebase/firestore";
+import { collection, query, where, onSnapshot, addDoc, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { NotificacionFallecido } from "@/types";
@@ -24,14 +24,16 @@ export default function MedicoFallecidosPage() {
 
   useEffect(() => {
     if (!user) return;
-    const q = query(
-      collection(db, "notificaciones_fallecidos"),
-      where("medicoId", "==", user.uid),
-      orderBy("creadoEn", "desc"),
-    );
-    return onSnapshot(q, s =>
-      setNotificaciones(s.docs.map(d => ({ id: d.id, ...d.data() } as NotificacionFallecido)))
-    );
+    const q = query(collection(db, "notificaciones_fallecidos"), where("medicoId", "==", user.uid));
+    return onSnapshot(q, s => {
+      const docs = s.docs.map(d => ({ id: d.id, ...d.data() } as NotificacionFallecido));
+      docs.sort((a, b) => {
+        const at = (a.creadoEn as { toDate?: () => Date }).toDate?.()?.getTime() ?? 0;
+        const bt = (b.creadoEn as { toDate?: () => Date }).toDate?.()?.getTime() ?? 0;
+        return bt - at;
+      });
+      setNotificaciones(docs);
+    });
   }, [user]);
 
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, query, where, orderBy, onSnapshot } from "firebase/firestore";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
 import Link from "next/link";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,8 +15,16 @@ export default function MedicoTrasladosPage() {
 
   useEffect(() => {
     if (!user) return;
-    const q = query(collection(db, "traslados"), where("medicoId", "==", user.uid), orderBy("creadoEn", "desc"));
-    return onSnapshot(q, s => setTraslados(s.docs.map(d => ({ id: d.id, ...d.data() } as SolicitudTraslado))));
+    const q = query(collection(db, "traslados"), where("medicoId", "==", user.uid));
+    return onSnapshot(q, s => {
+      const docs = s.docs.map(d => ({ id: d.id, ...d.data() } as SolicitudTraslado));
+      docs.sort((a, b) => {
+        const at = (a.creadoEn as { toDate?: () => Date }).toDate?.()?.getTime() ?? 0;
+        const bt = (b.creadoEn as { toDate?: () => Date }).toDate?.()?.getTime() ?? 0;
+        return bt - at;
+      });
+      setTraslados(docs);
+    });
   }, [user]);
 
   const formatFecha = (ts: unknown) => {

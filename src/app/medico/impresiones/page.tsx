@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { collection, query, where, orderBy, onSnapshot, addDoc, Timestamp } from "firebase/firestore";
+import { collection, query, where, onSnapshot, addDoc, Timestamp } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -24,8 +24,16 @@ export default function MedicoImpresionesPage() {
 
   useEffect(() => {
     if (!user) return;
-    const q = query(collection(db, "solicitudes_impresion"), where("medicoId", "==", user.uid), orderBy("creadoEn", "desc"));
-    return onSnapshot(q, s => setSolicitudes(s.docs.map(d => ({ id: d.id, ...d.data() } as SolicitudImpresion))));
+    const q = query(collection(db, "solicitudes_impresion"), where("medicoId", "==", user.uid));
+    return onSnapshot(q, s => {
+      const docs = s.docs.map(d => ({ id: d.id, ...d.data() } as SolicitudImpresion));
+      docs.sort((a, b) => {
+        const at = (a.creadoEn as { toDate?: () => Date }).toDate?.()?.getTime() ?? 0;
+        const bt = (b.creadoEn as { toDate?: () => Date }).toDate?.()?.getTime() ?? 0;
+        return bt - at;
+      });
+      setSolicitudes(docs);
+    });
   }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {

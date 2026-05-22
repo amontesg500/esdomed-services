@@ -310,7 +310,7 @@ export default function DashboardFallecidosPage() {
                     <SectionTitle>Datos del caso</SectionTitle>
                     <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-x-4 gap-y-3">
                       <InfoCell label="Fecha defunción" value={formatFecha(selectedLive.fechaDefuncion)} />
-                      <InfoCell label="Servicio médico"  value={selectedLive.medicoServicio} />
+                      <InfoCell label="Servicio"         value={selectedLive.servicio} />
                       <div className="col-span-2">
                         <InfoCell label="Notificado por" value={`Dr. ${selectedLive.medicoNombre}`} />
                       </div>

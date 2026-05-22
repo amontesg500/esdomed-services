@@ -6,6 +6,7 @@ import { collection, addDoc, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { ChevronLeft } from "lucide-react";
+import { SERVICIOS_HOSPITALARIOS } from "@/lib/servicios";
 
 const inputCls = "w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition";
 
@@ -20,7 +21,7 @@ export default function NuevaTrasladoPage() {
     motivoTraslado: "",
   });
 
-  const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+  const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm(prev => ({ ...prev, [field]: e.target.value }));
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -30,7 +31,7 @@ export default function NuevaTrasladoPage() {
     const now = Timestamp.now();
     await addDoc(collection(db, "traslados"), {
       ...form, medicoId: user.uid, medicoNombre: profile.nombre,
-      medicoServicio: profile.servicio ?? "", estado: "pendiente",
+      medicoServicio: profile.servicios?.join(" / ") || profile.servicio || "", estado: "pendiente",
       creadoEn: now, actualizadoEn: now,
     });
     router.replace("/medico/traslados");
@@ -56,9 +57,9 @@ export default function NuevaTrasladoPage() {
 
         <Section title="Traslado">
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Servicio origen" value={form.servicioOrigen} onChange={set("servicioOrigen")} required />
+            <SelectField label="Servicio origen" value={form.servicioOrigen} onChange={set("servicioOrigen")} required />
             <Field label="Cama origen" value={form.camaOrigen} onChange={set("camaOrigen")} required />
-            <Field label="Servicio destino" value={form.servicioDestino} onChange={set("servicioDestino")} required />
+            <SelectField label="Servicio destino" value={form.servicioDestino} onChange={set("servicioDestino")} required />
             <Field label="Cama destino" value={form.camaDestino} onChange={set("camaDestino")} required />
           </div>
         </Section>
@@ -97,6 +98,24 @@ function Field({ label, value, onChange, required }: {
     <div>
       <label className="block text-xs font-medium text-slate-500 mb-1.5">{label}</label>
       <input type="text" value={value} onChange={onChange} required={required} className={inputCls} />
+    </div>
+  );
+}
+
+function SelectField({ label, value, onChange, required }: {
+  label: string; value: string;
+  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  required?: boolean;
+}) {
+  return (
+    <div>
+      <label className="block text-xs font-medium text-slate-500 mb-1.5">{label}</label>
+      <select value={value} onChange={onChange} required={required} className={inputCls}>
+        <option value="">Seleccionar...</option>
+        {SERVICIOS_HOSPITALARIOS.map(s => (
+          <option key={s} value={s}>{s}</option>
+        ))}
+      </select>
     </div>
   );
 }

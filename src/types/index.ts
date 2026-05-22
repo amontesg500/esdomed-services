@@ -5,7 +5,8 @@ export interface UserProfile {
   email: string;
   nombre: string;
   role: UserRole;
-  servicio?: string; // solo médicos
+  servicio?: string;   // solo médicos — campo legacy (un servicio)
+  servicios?: string[]; // solo médicos — multi-servicio (campo nuevo)
   createdAt: Date;
 }
 

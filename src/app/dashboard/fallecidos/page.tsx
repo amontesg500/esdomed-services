@@ -247,6 +247,11 @@ export default function DashboardFallecidosPage() {
                               <FileWarning size={10} /> Cert. pendiente
                             </span>
                           )}
+                          {n.estadoEntregaCertificado === "entregado" && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-900 px-1.5 py-0.5 rounded-md">
+                              <CheckCircle2 size={10} /> Cert. entregado
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="px-4 py-3 text-right">

@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { NotificacionFallecido } from "@/types";
 import { Badge } from "@/components/ui/Badge";
 import { HeartPulse, Plus } from "lucide-react";
+import { SERVICIOS_HOSPITALARIOS } from "@/lib/servicios";
 
 const inputCls = "w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition";
 
@@ -36,7 +37,7 @@ export default function MedicoFallecidosPage() {
     });
   }, [user]);
 
-  const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+  const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm(prev => ({ ...prev, [field]: e.target.value }));
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -52,7 +53,7 @@ export default function MedicoFallecidosPage() {
       causaMuerte: form.causaMuerte,
       medicoId: user.uid,
       medicoNombre: profile.nombre,
-      medicoServicio: profile.servicio ?? "",
+      medicoServicio: profile.servicios?.join(" / ") || profile.servicio || "",
       estado: "pendiente",
       creadoEn: Timestamp.now(),
     });
@@ -104,7 +105,12 @@ export default function MedicoFallecidosPage() {
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1.5">Servicio</label>
-              <input type="text" value={form.servicio} onChange={set("servicio")} required className={inputCls} />
+              <select value={form.servicio} onChange={set("servicio")} required className={inputCls}>
+                <option value="">Seleccionar servicio...</option>
+                {SERVICIOS_HOSPITALARIOS.map(s => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1.5">Cama</label>

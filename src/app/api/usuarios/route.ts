@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   const role = await getCallerRole(req);
   if (role !== "esdomed") return NextResponse.json({ error: "No autorizado" }, { status: 403 });
 
-  const { nombre, email, password, userRole, servicio } = await req.json();
+  const { nombre, email, password, userRole, servicios } = await req.json();
 
   if (!nombre || !email || !password || !userRole) {
     return NextResponse.json({ error: "Faltan campos requeridos" }, { status: 400 });
@@ -37,11 +37,14 @@ export async function POST(req: NextRequest) {
 
   const userRecord = await adminAuth.createUser({ email, password, displayName: nombre });
 
+  const serviciosArr: string[] = Array.isArray(servicios) ? servicios : [];
+
   await adminDb.collection("usuarios").doc(userRecord.uid).set({
     nombre,
     email,
     role: userRole,
-    servicio: servicio ?? "",
+    servicios: serviciosArr,
+    servicio: serviciosArr[0] ?? "",
     createdAt: FieldValue.serverTimestamp(),
   });
 

@@ -107,6 +107,7 @@ export default function DashboardUsuariosPage() {
               <select value={form.userRole} onChange={set("userRole")} className={inputCls}>
                 <option value="medico">Médico</option>
                 <option value="esdomed">Personal ESDOMED</option>
+                <option value="trabajo_social">Trabajo Social</option>
               </select>
             </div>
             {form.userRole === "medico" && (

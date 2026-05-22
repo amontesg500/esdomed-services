@@ -17,7 +17,7 @@ async function getCallerRole(req: NextRequest): Promise<string | null> {
 // GET — listar todos los usuarios
 export async function GET(req: NextRequest) {
   const role = await getCallerRole(req);
-  if (role !== "esdomed") return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  if (role !== "esdomed" && role !== "admin") return NextResponse.json({ error: "No autorizado" }, { status: 403 });
 
   const snap = await adminDb.collection("usuarios").orderBy("nombre").get();
   const usuarios = snap.docs.map((d) => ({ uid: d.id, ...d.data() }));
@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
 // POST — crear usuario
 export async function POST(req: NextRequest) {
   const role = await getCallerRole(req);
-  if (role !== "esdomed") return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  if (role !== "esdomed" && role !== "admin") return NextResponse.json({ error: "No autorizado" }, { status: 403 });
 
   const { nombre, email, password, userRole, servicios, jvpm } = await req.json();
 

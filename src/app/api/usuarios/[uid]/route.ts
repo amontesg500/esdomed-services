@@ -34,7 +34,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ ui
 // DELETE — eliminar usuario
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ uid: string }> }) {
   const role = await getCallerRole(req);
-  if (role !== "esdomed") return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  if (role !== "esdomed" && role !== "admin") return NextResponse.json({ error: "No autorizado" }, { status: 403 });
 
   const { uid } = await params;
   await adminAuth.deleteUser(uid);

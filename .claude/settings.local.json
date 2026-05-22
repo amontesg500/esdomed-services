@@ -5,7 +5,19 @@
       "PowerShell(Head *)",
       "PowerShell(Get-Item *)",
       "PowerShell([System.IO.Directory]::GetFileSystemEntries\\(\"C:\\\\Users\\\\Usuario\\\\Desktop\\\\esdomed-services\"\\) | ForEach-Object { [System.IO.Path]::GetFileName\\($_\\) })",
-      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --no-git)"
+      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --no-git)",
+      "Bash(npm install *)",
+      "Bash(cd C:\\\\Users\\\\Usuario\\\\Desktop\\\\esdomed-services *)",
+      "Bash(Test-Path *)",
+      "Bash(npm run *)",
+      "Bash(npx tsc *)",
+      "Bash(npx vercel *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(gh *)",
+      "Bash(git remote *)",
+      "Bash(git push *)",
+      "Bash(git commit *)"
     ]
   }
 }

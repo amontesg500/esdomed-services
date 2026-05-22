@@ -59,6 +59,18 @@ export default function DashboardUsuariosPage() {
     setDeletingUid(null); await fetchUsuarios();
   };
 
+  const roleColors = {
+    esdomed: "bg-violet-50 dark:bg-violet-950 text-violet-600 dark:text-violet-400 border-violet-200 dark:border-violet-900",
+    trabajo_social: "bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900",
+    medico: "bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-900"
+  };
+
+  const roleLabels = {
+    esdomed: "ESDOMED",
+    trabajo_social: "Trabajo Social",
+    medico: "Médico"
+  };
+
   return (
     <div className="p-4 md:p-6 max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-6">
@@ -135,12 +147,8 @@ export default function DashboardUsuariosPage() {
                   <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{u.nombre}</td>
                   <td className="px-4 py-3 text-slate-500">{u.email}</td>
                   <td className="px-4 py-3">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${
-                      u.role === "esdomed"
-                        ? "bg-violet-50 dark:bg-violet-950 text-violet-600 dark:text-violet-400 border-violet-200 dark:border-violet-900"
-                        : "bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-900"
-                    }`}>
-                      {u.role === "esdomed" ? "ESDOMED" : "Médico"}
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${roleColors[u.role] || roleColors.medico}`}>
+                      {roleLabels[u.role] || "Médico"}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-slate-500">{u.servicio || "—"}</td>

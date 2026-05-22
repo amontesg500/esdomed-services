@@ -191,8 +191,8 @@ export default function DashboardFallecidosPage() {
                   return (
                     <tr key={n.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
                       <td className="px-4 py-3">
-                        <p className="font-medium text-slate-900 dark:text-slate-100">{n.pacienteNombre}</p>
-                        <p className="text-xs text-slate-500 mt-0.5">Exp. {n.pacienteExpediente}</p>
+                        <p className="font-semibold text-slate-900 dark:text-slate-100 font-mono text-sm">{n.pacienteExpediente}</p>
+                        <p className="text-xs text-slate-500 mt-0.5">{n.pacienteNombre}</p>
                       </td>
                       <td className="px-4 py-3">
                         <p className="text-slate-700 dark:text-slate-300">{n.servicio} · Cama {n.cama}</p>
@@ -236,15 +236,14 @@ export default function DashboardFallecidosPage() {
             {/* Header */}
             <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between gap-4 flex-shrink-0">
               <div>
-                <h2 className="font-bold text-lg text-slate-900 dark:text-slate-100 font-heading leading-tight">
-                  {selectedLive.pacienteNombre}
+                <p className="text-xs text-slate-500 font-medium mb-0.5">Expediente</p>
+                <h2 className="font-bold text-lg text-slate-900 dark:text-slate-100 font-mono leading-tight">
+                  {selectedLive.pacienteExpediente}
                 </h2>
                 <p className="text-xs text-slate-500 mt-1">
-                  Exp. {selectedLive.pacienteExpediente}
+                  {selectedLive.pacienteNombre}
                   <span className="mx-1.5 text-slate-300 dark:text-slate-700">·</span>
-                  {selectedLive.servicio}
-                  <span className="mx-1.5 text-slate-300 dark:text-slate-700">·</span>
-                  Cama {selectedLive.cama}
+                  {selectedLive.servicio} · Cama {selectedLive.cama}
                   <span className="mx-1.5 text-slate-300 dark:text-slate-700">·</span>
                   Dr. {selectedLive.medicoNombre}
                 </p>

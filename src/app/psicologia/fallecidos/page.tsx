@@ -127,8 +127,8 @@ export default function PsicologiaFallecidosPage() {
                 {filtered.map(n => (
                   <tr key={n.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
                     <td className="px-4 py-3">
-                      <p className="font-medium text-slate-900 dark:text-slate-100">{n.pacienteNombre}</p>
-                      <p className="text-xs text-slate-500 mt-0.5">Exp. {n.pacienteExpediente}</p>
+                      <p className="font-semibold text-slate-900 dark:text-slate-100 font-mono text-sm">{n.pacienteExpediente}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">{n.pacienteNombre}</p>
                     </td>
                     <td className="px-4 py-3">
                       <p className="text-slate-700 dark:text-slate-300">{n.servicio} · Cama {n.cama}</p>
@@ -173,9 +173,12 @@ export default function PsicologiaFallecidosPage() {
             {/* Header */}
             <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between gap-3 flex-shrink-0">
               <div>
-                <h2 className="font-bold text-slate-900 dark:text-slate-100 font-heading">{selectedLive.pacienteNombre}</h2>
+                <p className="text-xs text-slate-500 font-medium mb-0.5">Expediente</p>
+                <h2 className="font-bold text-slate-900 dark:text-slate-100 font-mono">
+                  {selectedLive.pacienteExpediente}
+                </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Exp. {selectedLive.pacienteExpediente} · {selectedLive.servicio} · Cama {selectedLive.cama}
+                  {selectedLive.pacienteNombre} · {selectedLive.servicio} · Cama {selectedLive.cama}
                 </p>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">

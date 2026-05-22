@@ -55,8 +55,11 @@ export interface NotificacionFallecido {
   digitaSimmowEn?: Date;
   entregaCertificado?: string;
   entregaCertificadoEn?: Date;
-  recibeDePs?: string;       // psicología / trabajo social
+  recibeDePs?: string;          // psicología / trabajo social
   recibeDePsEn?: Date;
+  recibeDePsUid?: string;       // uid del usuario asignado (set by ESDOMED)
+  recibeDePsConfirmado?: boolean;
+  recibeDePsConfirmadoEn?: Date;
   tramitaDefuncion?: string;
   tramitaDefuncionEn?: Date;
   estadoEntregaCertificado?: "pendiente" | "entregado";

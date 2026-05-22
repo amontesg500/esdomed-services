@@ -2,17 +2,9 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { LayoutDashboard, ArrowRightLeft, HeartPulse, Printer, Users } from "lucide-react";
+import { LayoutDashboard, ArrowRightLeft, HeartPulse, Printer, Users, Inbox } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Sidebar } from "@/components/Sidebar";
-
-const navItems = [
-  { href: "/dashboard",             label: "Inicio",      icon: LayoutDashboard, exact: true },
-  { href: "/dashboard/traslados",   label: "Traslados",   icon: ArrowRightLeft },
-  { href: "/dashboard/fallecidos",  label: "Fallecidos",  icon: HeartPulse },
-  { href: "/dashboard/impresiones", label: "Impresiones", icon: Printer },
-  { href: "/dashboard/usuarios",    label: "Usuarios",    icon: Users },
-];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { profile, loading } = useAuth();
@@ -27,6 +19,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const roleLabel = profile?.role === "trabajo_social" ? "Trabajo Social"
                   : profile?.role === "admin" ? "Administración"
                   : "ESDOMED";
+
+  const navItems = [
+    { href: "/dashboard",             label: "Inicio",       icon: LayoutDashboard, exact: true },
+    { href: "/dashboard/traslados",   label: "Traslados",    icon: ArrowRightLeft },
+    { href: "/dashboard/fallecidos",  label: "Fallecidos",   icon: HeartPulse },
+    { href: "/dashboard/impresiones", label: "Impresiones",  icon: Printer },
+    { href: "/dashboard/usuarios",    label: "Usuarios",     icon: Users },
+    ...(profile?.role === "trabajo_social"
+      ? [{ href: "/dashboard/recepciones", label: "Recepciones", icon: Inbox }]
+      : []),
+  ];
 
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden">

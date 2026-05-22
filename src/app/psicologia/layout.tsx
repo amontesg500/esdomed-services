@@ -2,12 +2,13 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { HeartPulse } from "lucide-react";
+import { HeartPulse, Inbox } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Sidebar } from "@/components/Sidebar";
 
 const navItems = [
-  { href: "/psicologia/fallecidos", label: "Fallecidos", icon: HeartPulse },
+  { href: "/psicologia/fallecidos",   label: "Fallecidos",  icon: HeartPulse },
+  { href: "/psicologia/recepciones",  label: "Recepciones", icon: Inbox },
 ];
 
 export default function PsicologiaLayout({ children }: { children: React.ReactNode }) {

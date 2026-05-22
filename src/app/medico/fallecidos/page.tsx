@@ -6,7 +6,7 @@ import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { NotificacionFallecido } from "@/types";
 import { Badge } from "@/components/ui/Badge";
-import { HeartPulse, Plus } from "lucide-react";
+import { HeartPulse, Plus, CheckCircle2, AlertCircle, X } from "lucide-react";
 import { SERVICIOS_HOSPITALARIOS } from "@/lib/servicios";
 
 const inputCls = "w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition";
@@ -16,12 +16,15 @@ const EMPTY = {
   servicio: "", cama: "", fechaDefuncion: "", causaMuerte: "",
 };
 
+type ModalState = { type: "success"; expediente: string; nombre: string } | { type: "error"; message: string } | null;
+
 export default function MedicoFallecidosPage() {
   const { user, profile } = useAuth();
   const [notificaciones, setNotificaciones] = useState<NotificacionFallecido[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(EMPTY);
+  const [modal, setModal] = useState<ModalState>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -44,22 +47,28 @@ export default function MedicoFallecidosPage() {
     e.preventDefault();
     if (!user || !profile) return;
     setSaving(true);
-    await addDoc(collection(db, "notificaciones_fallecidos"), {
-      pacienteNombre: form.pacienteNombre,
-      pacienteExpediente: form.pacienteExpediente,
-      servicio: form.servicio,
-      cama: form.cama,
-      fechaDefuncion: Timestamp.fromDate(new Date(form.fechaDefuncion)),
-      causaMuerte: form.causaMuerte,
-      medicoId: user.uid,
-      medicoNombre: profile.nombre,
-      medicoServicio: profile.servicios?.join(" / ") || profile.servicio || "",
-      estado: "pendiente",
-      creadoEn: Timestamp.now(),
-    });
-    setSaving(false);
-    setForm(EMPTY);
-    setShowForm(false);
+    try {
+      await addDoc(collection(db, "notificaciones_fallecidos"), {
+        pacienteNombre: form.pacienteNombre,
+        pacienteExpediente: form.pacienteExpediente,
+        servicio: form.servicio,
+        cama: form.cama,
+        fechaDefuncion: Timestamp.fromDate(new Date(form.fechaDefuncion)),
+        causaMuerte: form.causaMuerte,
+        medicoId: user.uid,
+        medicoNombre: profile.nombre,
+        medicoServicio: profile.servicios?.join(" / ") || profile.servicio || "",
+        estado: "pendiente",
+        creadoEn: Timestamp.now(),
+      });
+      setModal({ type: "success", expediente: form.pacienteExpediente, nombre: form.pacienteNombre });
+      setForm(EMPTY);
+      setShowForm(false);
+    } catch (err) {
+      setModal({ type: "error", message: err instanceof Error ? err.message : "No se pudo enviar la notificación." });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const formatFecha = (ts: unknown) => {
@@ -158,6 +167,61 @@ export default function MedicoFallecidosPage() {
           </div>
         ))}
       </div>
+
+      {/* Modal de resultado */}
+      {modal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col items-center text-center gap-4">
+            {modal.type === "success" ? (
+              <>
+                <div className="w-14 h-14 bg-green-50 dark:bg-green-500/10 rounded-full flex items-center justify-center border border-green-200 dark:border-green-500/30">
+                  <CheckCircle2 size={28} className="text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <p className="text-base font-bold text-slate-900 dark:text-slate-100">Notificación enviada</p>
+                  <p className="text-sm text-slate-500 mt-1">
+                    La notificación del paciente{" "}
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">{modal.nombre}</span>{" "}
+                    (Exp.{" "}
+                    <span className="font-mono font-semibold text-slate-700 dark:text-slate-300">{modal.expediente}</span>
+                    ) fue enviada correctamente a ESDOMED.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setModal(null)}
+                  className="w-full py-2.5 bg-green-600 hover:bg-green-500 text-white text-sm font-semibold rounded-xl transition-colors"
+                >
+                  Aceptar
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="w-14 h-14 bg-red-50 dark:bg-red-500/10 rounded-full flex items-center justify-center border border-red-200 dark:border-red-500/30">
+                  <AlertCircle size={28} className="text-red-600 dark:text-red-400" />
+                </div>
+                <div>
+                  <p className="text-base font-bold text-slate-900 dark:text-slate-100">Error al enviar</p>
+                  <p className="text-sm text-slate-500 mt-1">{modal.message}</p>
+                </div>
+                <button
+                  onClick={() => setModal(null)}
+                  className="w-full py-2.5 bg-red-600 hover:bg-red-500 text-white text-sm font-semibold rounded-xl transition-colors"
+                >
+                  Cerrar
+                </button>
+              </>
+            )}
+
+            {/* X button */}
+            <button
+              onClick={() => setModal(null)}
+              className="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition-colors"
+            >
+              <X size={15} />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

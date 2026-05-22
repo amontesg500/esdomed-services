@@ -56,6 +56,11 @@ export interface NotificacionFallecido {
   entregaCertificadoEn?: Date;
   recibeDePs?: string;       // psicología / trabajo social
   recibeDePsEn?: Date;
+  tramitaDefuncion?: string;
+  tramitaDefuncionEn?: Date;
+  estadoEntregaCertificado?: "pendiente" | "entregado";
+  tipoCertificado?: "digital" | "manual";
+  actualizoFieh?: boolean;
   familiarNombre?: string;
   familiarDocumento?: string;
 }

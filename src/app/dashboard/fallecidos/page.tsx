@@ -10,11 +10,14 @@ import { HeartPulse, Clock, X, ChevronDown, CheckCircle2 } from "lucide-react";
 
 const COLUMNAS_SEGUIMIENTO = [
   { key: "digitaSimmow",       keyEn: "digitaSimmowEn",       label: "Digita SIMMOW" },
-  { key: "entregaCertificado", keyEn: "entregaCertificadoEn", label: "Entrega certificado" },
+  { key: "tramitaDefuncion",   keyEn: "tramitaDefuncionEn",   label: "Tramita Defunción" },
+  { key: "entregaCertificado", keyEn: "entregaCertificadoEn", label: "Entrega Certificado" },
   { key: "recibeDePs",         keyEn: "recibeDePsEn",         label: "Recibe Psic./T.S." },
 ] as const;
 
 type CampoSeguimiento = typeof COLUMNAS_SEGUIMIENTO[number]["key"];
+
+const selectCls = "w-full appearance-none bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg pl-3 pr-8 py-2 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 cursor-pointer shadow-sm";
 
 export default function DashboardFallecidosPage() {
   const { profile } = useAuth();
@@ -67,6 +70,13 @@ export default function DashboardFallecidosPage() {
     setUpdatingCell(null);
   };
 
+  const actualizarCampo = async (campo: string, valor: string | boolean | null) => {
+    if (!selected?.id) return;
+    setUpdatingCell(campo);
+    await updateDoc(doc(db, "notificaciones_fallecidos", selected.id), { [campo]: valor });
+    setUpdatingCell(null);
+  };
+
   const guardarFamiliar = async () => {
     if (!selected?.id) return;
     setSavingFamiliar(true);
@@ -92,10 +102,12 @@ export default function DashboardFallecidosPage() {
   const productividad = personal.map(p => ({
     nombre: p.nombre,
     simmow:      notificaciones.filter(n => n.digitaSimmow === p.nombre).length,
+    tramita:     notificaciones.filter(n => n.tramitaDefuncion === p.nombre).length,
     certificado: notificaciones.filter(n => n.entregaCertificado === p.nombre).length,
     psicologia:  notificaciones.filter(n => n.recibeDePs === p.nombre).length,
     total:       notificaciones.filter(n =>
-      n.digitaSimmow === p.nombre || n.entregaCertificado === p.nombre || n.recibeDePs === p.nombre
+      n.digitaSimmow === p.nombre || n.tramitaDefuncion === p.nombre ||
+      n.entregaCertificado === p.nombre || n.recibeDePs === p.nombre
     ).length,
   })).filter(p => p.total > 0).sort((a, b) => b.total - a.total);
 
@@ -131,6 +143,7 @@ export default function DashboardFallecidosPage() {
                 <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">{p.nombre}</p>
                 <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
                   {p.simmow > 0      && <span className="text-[11px] text-blue-600 dark:text-blue-400">{p.simmow} SIMMOW</span>}
+                  {p.tramita > 0     && <span className="text-[11px] text-teal-600 dark:text-teal-400">{p.tramita} tram.</span>}
                   {p.certificado > 0 && <span className="text-[11px] text-violet-600 dark:text-violet-400">{p.certificado} cert.</span>}
                   {p.psicologia > 0  && <span className="text-[11px] text-rose-600 dark:text-rose-400">{p.psicologia} psic.</span>}
                 </div>
@@ -174,7 +187,7 @@ export default function DashboardFallecidosPage() {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {filtered.map(n => {
-                  const pasos = [n.digitaSimmow, n.entregaCertificado, n.recibeDePs].filter(Boolean).length;
+                  const pasos = COLUMNAS_SEGUIMIENTO.filter(col => !!n[col.key]).length;
                   return (
                     <tr key={n.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
                       <td className="px-4 py-3">
@@ -193,14 +206,11 @@ export default function DashboardFallecidosPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1.5">
-                          {COLUMNAS_SEGUIMIENTO.map(col => {
-                            const hecho = !!n[col.key];
-                            return (
-                              <div key={col.key} title={col.label}
-                                className={`w-2 h-2 rounded-full ${hecho ? "bg-green-500" : "bg-slate-300 dark:bg-slate-600"}`} />
-                            );
-                          })}
-                          <span className="text-xs text-slate-500 ml-1">{pasos}/3</span>
+                          {COLUMNAS_SEGUIMIENTO.map(col => (
+                            <div key={col.key} title={col.label}
+                              className={`w-2 h-2 rounded-full ${!!n[col.key] ? "bg-green-500" : "bg-slate-300 dark:bg-slate-600"}`} />
+                          ))}
+                          <span className="text-xs text-slate-500 ml-1">{pasos}/{COLUMNAS_SEGUIMIENTO.length}</span>
                         </div>
                       </td>
                       <td className="px-4 py-3 text-right">
@@ -242,11 +252,7 @@ export default function DashboardFallecidosPage() {
 
                 {/* Datos del caso */}
                 <div className="space-y-4">
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                    <span className="w-5 h-px bg-slate-200 dark:bg-slate-700"></span>
-                    Datos del caso
-                    <span className="flex-1 h-px bg-slate-200 dark:bg-slate-700"></span>
-                  </p>
+                  <SectionTitle>Datos del caso</SectionTitle>
                   <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-5 border border-slate-100 dark:border-slate-800 space-y-4">
                     <InfoCell label="Fecha defunción" value={formatFecha(selectedLive.fechaDefuncion)} />
                     <InfoCell label="Notificado por"  value={`Dr. ${selectedLive.medicoNombre}`} />
@@ -257,25 +263,23 @@ export default function DashboardFallecidosPage() {
 
                 {/* Seguimiento */}
                 <div className="space-y-4">
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                    <span className="w-5 h-px bg-slate-200 dark:bg-slate-700"></span>
-                    Seguimiento
-                    <span className="flex-1 h-px bg-slate-200 dark:bg-slate-700"></span>
-                  </p>
+                  <SectionTitle>Seguimiento</SectionTitle>
                   <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-5 border border-slate-100 dark:border-slate-800 space-y-4">
+
+                    {/* Asignación de personas */}
                     {COLUMNAS_SEGUIMIENTO.map(col => {
                       const valor = selectedLive[col.key] as string | undefined;
                       const fecha = selectedLive[col.keyEn];
-                      const loading = updatingCell === col.key;
+                      const isLoading = updatingCell === col.key;
                       return (
                         <div key={col.key}>
                           <label className="block text-xs font-medium text-slate-500 mb-1.5">{col.label}</label>
                           <div className="relative">
                             <select
                               value={valor ?? ""}
-                              disabled={loading}
+                              disabled={isLoading}
                               onChange={e => asignar(col.key, e.target.value)}
-                              className="w-full appearance-none bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg pl-3 pr-8 py-2 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 cursor-pointer shadow-sm"
+                              className={selectCls}
                             >
                               <option value="">— Sin asignar</option>
                               {personal.map(p => (
@@ -285,7 +289,7 @@ export default function DashboardFallecidosPage() {
                             <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                           </div>
                           {valor && fecha && (
-                            <p className="text-[11px] text-slate-400 mt-1.5 flex items-center gap-1.5 bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 px-2 py-1 rounded-md w-fit">
+                            <p className="text-[11px] mt-1.5 flex items-center gap-1.5 bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 px-2 py-1 rounded-md w-fit">
                               <CheckCircle2 size={12} />
                               {formatHora(fecha)}
                             </p>
@@ -293,16 +297,69 @@ export default function DashboardFallecidosPage() {
                         </div>
                       );
                     })}
+
+                    {/* Certificado */}
+                    <div className="border-t border-slate-200 dark:border-slate-700 pt-4 space-y-3">
+                      <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest">Certificado</p>
+
+                      {/* Estado de entrega */}
+                      <div>
+                        <label className="block text-xs font-medium text-slate-500 mb-1.5">Estado de entrega</label>
+                        <div className="relative">
+                          <select
+                            value={selectedLive.estadoEntregaCertificado ?? ""}
+                            disabled={updatingCell === "estadoEntregaCertificado"}
+                            onChange={e => actualizarCampo("estadoEntregaCertificado", e.target.value || null)}
+                            className={selectCls}
+                          >
+                            <option value="">— Sin definir</option>
+                            <option value="pendiente">Pendiente</option>
+                            <option value="entregado">Entregado</option>
+                          </select>
+                          <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                        </div>
+                      </div>
+
+                      {/* Tipo de certificado */}
+                      <div>
+                        <label className="block text-xs font-medium text-slate-500 mb-1.5">Tipo de certificado</label>
+                        <div className="relative">
+                          <select
+                            value={selectedLive.tipoCertificado ?? ""}
+                            disabled={updatingCell === "tipoCertificado"}
+                            onChange={e => actualizarCampo("tipoCertificado", e.target.value || null)}
+                            className={selectCls}
+                          >
+                            <option value="">— Sin definir</option>
+                            <option value="digital">Digital</option>
+                            <option value="manual">Manual</option>
+                          </select>
+                          <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                        </div>
+                      </div>
+
+                      {/* Checkbox FIEH */}
+                      <label className="flex items-start gap-2.5 cursor-pointer group">
+                        <input
+                          type="checkbox"
+                          checked={selectedLive.actualizoFieh ?? false}
+                          disabled={updatingCell === "actualizoFieh"}
+                          onChange={e => actualizarCampo("actualizoFieh", e.target.checked)}
+                          className="mt-0.5 w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 flex-shrink-0 cursor-pointer"
+                        />
+                        <span className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed group-hover:text-slate-800 dark:group-hover:text-slate-200 transition-colors">
+                          ¿Actualizó FIEH en Archivero Virtual y Datos en Simmow al momento de entregar certificado manual?{" "}
+                          <span className="text-slate-400 dark:text-slate-500">(Si es digital, omitir)</span>
+                        </span>
+                      </label>
+                    </div>
+
                   </div>
                 </div>
 
                 {/* Familiar */}
                 <div className="space-y-4">
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                    <span className="w-5 h-px bg-slate-200 dark:bg-slate-700"></span>
-                    Familiar
-                    <span className="flex-1 h-px bg-slate-200 dark:bg-slate-700"></span>
-                  </p>
+                  <SectionTitle>Familiar</SectionTitle>
                   <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-5 border border-slate-100 dark:border-slate-800 space-y-4 flex flex-col h-[calc(100%-2rem)]">
                     <div>
                       <label className="block text-xs font-medium text-slate-500 mb-1.5">Nombre completo</label>
@@ -341,6 +398,7 @@ export default function DashboardFallecidosPage() {
                     </div>
                   </div>
                 </div>
+
               </div>
             </div>
 
@@ -357,6 +415,16 @@ export default function DashboardFallecidosPage() {
         </div>
       )}
     </div>
+  );
+}
+
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+      <span className="w-5 h-px bg-slate-200 dark:bg-slate-700" />
+      {children}
+      <span className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
+    </p>
   );
 }
 

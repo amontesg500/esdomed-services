@@ -14,11 +14,19 @@ export default function PsicologiaFallecidosPage() {
   const [filtro, setFiltro] = useState<"pendiente" | "confirmado" | "todos">("todos");
   const [selected, setSelected] = useState<NotificacionFallecido | null>(null);
   const [savingVisto, setSavingVisto] = useState(false);
+  const [permissionError, setPermissionError] = useState(false);
 
   useEffect(() => {
     const q = query(collection(db, "notificaciones_fallecidos"), orderBy("creadoEn", "desc"));
-    return onSnapshot(q, s =>
-      setNotificaciones(s.docs.map(d => ({ id: d.id, ...d.data() } as NotificacionFallecido)))
+    return onSnapshot(
+      q,
+      s => {
+        setPermissionError(false);
+        setNotificaciones(s.docs.map(d => ({ id: d.id, ...d.data() } as NotificacionFallecido)));
+      },
+      err => {
+        if (err.code === "permission-denied") setPermissionError(true);
+      }
     );
   }, []);
 
@@ -68,6 +76,13 @@ export default function PsicologiaFallecidosPage() {
           </div>
         )}
       </div>
+
+      {/* Error de permisos */}
+      {permissionError && (
+        <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-900 rounded-xl px-4 py-3 text-sm text-red-700 dark:text-red-400">
+          Sin permisos para leer notificaciones. Pide al administrador que agregue <strong>psicologia</strong> a las reglas de Firestore.
+        </div>
+      )}
 
       {/* Filtros */}
       <div className="flex flex-wrap items-center gap-2">

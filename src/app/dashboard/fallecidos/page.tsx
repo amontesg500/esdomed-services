@@ -226,7 +226,7 @@ export default function DashboardFallecidosPage() {
       {/* Panel de detalle */}
       {selectedLive && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl w-[95vw] max-w-5xl max-h-[90vh] flex flex-col">
 
             {/* Header del panel */}
             <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between gap-3 flex-shrink-0">
@@ -243,93 +243,109 @@ export default function DashboardFallecidosPage() {
               </div>
             </div>
 
-            <div className="overflow-y-auto flex-1 p-5 space-y-5">
-
-              {/* Info del paciente */}
-              <div className="space-y-2">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">Datos del caso</p>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                  <InfoCell label="Fecha defunción" value={formatFecha(selectedLive.fechaDefuncion)} />
-                  <InfoCell label="Notificado por"  value={`Dr. ${selectedLive.medicoNombre}`} />
-                  <InfoCell label="Servicio"        value={selectedLive.medicoServicio} />
-                  {selectedLive.causaMuerte && <InfoCell label="Causa" value={selectedLive.causaMuerte} className="col-span-2" />}
+            <div className="overflow-y-auto flex-1 p-5 md:p-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+                {/* Info del paciente */}
+                <div className="space-y-4">
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                    <span className="w-5 h-px bg-slate-200 dark:bg-slate-700"></span>
+                    Datos del caso
+                    <span className="flex-1 h-px bg-slate-200 dark:bg-slate-700"></span>
+                  </p>
+                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-5 border border-slate-100 dark:border-slate-800 space-y-4">
+                    <InfoCell label="Fecha defunción" value={formatFecha(selectedLive.fechaDefuncion)} />
+                    <InfoCell label="Notificado por"  value={`Dr. ${selectedLive.medicoNombre}`} />
+                    <InfoCell label="Servicio"        value={selectedLive.medicoServicio} />
+                    {selectedLive.causaMuerte && <InfoCell label="Causa" value={selectedLive.causaMuerte} />}
+                  </div>
                 </div>
-              </div>
 
-              <div className="h-px bg-slate-200 dark:bg-slate-800" />
+                {/* Seguimiento ESDOMED */}
+                <div className="space-y-4">
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                    <span className="w-5 h-px bg-slate-200 dark:bg-slate-700"></span>
+                    Seguimiento
+                    <span className="flex-1 h-px bg-slate-200 dark:bg-slate-700"></span>
+                  </p>
+                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-5 border border-slate-100 dark:border-slate-800 space-y-4">
+                    {COLUMNAS_SEGUIMIENTO.map(col => {
+                      const valor = selectedLive[col.key] as string | undefined;
+                      const fecha = selectedLive[col.keyEn];
+                      const loading = updatingCell === col.key;
+                      return (
+                        <div key={col.key}>
+                          <label className="block text-xs font-medium text-slate-500 mb-1.5">{col.label}</label>
+                          <div className="relative">
+                            <select
+                              value={valor ?? ""}
+                              disabled={loading}
+                              onChange={e => asignar(col.key, e.target.value)}
+                              className="w-full appearance-none bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg pl-3 pr-8 py-2 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 cursor-pointer shadow-sm"
+                            >
+                              <option value="">— Sin asignar</option>
+                              {personal.map(p => (
+                                <option key={p.uid} value={p.nombre}>{p.nombre}</option>
+                              ))}
+                            </select>
+                            <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                          </div>
+                          {valor && fecha && (
+                            <p className="text-[11px] text-slate-400 mt-1.5 flex items-center gap-1.5 bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 px-2 py-1 rounded-md w-fit">
+                              <CheckCircle2 size={12} />
+                              {formatHora(fecha)}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
 
-              {/* Seguimiento ESDOMED */}
-              <div className="space-y-3">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">Seguimiento ESDOMED</p>
-                {COLUMNAS_SEGUIMIENTO.map(col => {
-                  const valor = selectedLive[col.key] as string | undefined;
-                  const fecha = selectedLive[col.keyEn];
-                  const loading = updatingCell === col.key;
-                  return (
-                    <div key={col.key}>
-                      <label className="block text-xs font-medium text-slate-500 mb-1">{col.label}</label>
-                      <div className="relative">
-                        <select
-                          value={valor ?? ""}
-                          disabled={loading}
-                          onChange={e => asignar(col.key, e.target.value)}
-                          className="w-full appearance-none bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg pl-3 pr-8 py-2 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 cursor-pointer"
-                        >
-                          <option value="">— Sin asignar</option>
-                          {personal.map(p => (
-                            <option key={p.uid} value={p.nombre}>{p.nombre}</option>
-                          ))}
-                        </select>
-                        <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                      </div>
-                      {valor && fecha && (
-                        <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
-                          <CheckCircle2 size={10} className="text-green-500" />
-                          {formatHora(fecha)}
+                {/* Familiar que retira el certificado */}
+                <div className="space-y-4">
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                    <span className="w-5 h-px bg-slate-200 dark:bg-slate-700"></span>
+                    Familiar
+                    <span className="flex-1 h-px bg-slate-200 dark:bg-slate-700"></span>
+                  </p>
+                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-5 border border-slate-100 dark:border-slate-800 space-y-4 flex flex-col h-[calc(100%-2rem)]">
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500 mb-1.5">Nombre completo</label>
+                      <input
+                        type="text"
+                        value={familiarNombre}
+                        onChange={e => setFamiliarNombre(e.target.value)}
+                        placeholder="Nombre del familiar"
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500 mb-1.5">Documento de identidad</label>
+                      <input
+                        type="text"
+                        value={familiarDocumento}
+                        onChange={e => setFamiliarDocumento(e.target.value)}
+                        placeholder="Número de identidad"
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                      />
+                    </div>
+                    <div className="mt-auto pt-2">
+                      <button
+                        onClick={guardarFamiliar}
+                        disabled={savingFamiliar}
+                        className="w-full py-2.5 bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 dark:hover:bg-slate-600 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors shadow-sm"
+                      >
+                        {savingFamiliar ? "Guardando..." : "Guardar datos"}
+                      </button>
+                      {selectedLive.familiarNombre && (
+                        <p className="text-xs text-green-600 dark:text-green-400 flex items-start gap-1.5 mt-3 bg-green-50 dark:bg-green-500/10 p-2 rounded-md">
+                          <CheckCircle2 size={14} className="flex-shrink-0 mt-0.5" /> 
+                          <span>Guardado:<br/><span className="font-medium text-slate-900 dark:text-slate-100">{selectedLive.familiarNombre}</span><br/><span className="opacity-80">{selectedLive.familiarDocumento}</span></span>
                         </p>
                       )}
                     </div>
-                  );
-                })}
-              </div>
-
-              <div className="h-px bg-slate-200 dark:bg-slate-800" />
-
-              {/* Familiar que retira el certificado */}
-              <div className="space-y-3">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">Familiar que retira el certificado</p>
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1">Nombre completo</label>
-                  <input
-                    type="text"
-                    value={familiarNombre}
-                    onChange={e => setFamiliarNombre(e.target.value)}
-                    placeholder="Nombre del familiar"
-                    className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1">Documento de identidad</label>
-                  <input
-                    type="text"
-                    value={familiarDocumento}
-                    onChange={e => setFamiliarDocumento(e.target.value)}
-                    placeholder="Número de identidad"
-                    className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <button
-                  onClick={guardarFamiliar}
-                  disabled={savingFamiliar}
-                  className="w-full py-2 bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 dark:hover:bg-slate-600 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors"
-                >
-                  {savingFamiliar ? "Guardando..." : "Guardar datos del familiar"}
-                </button>
-                {selectedLive.familiarNombre && (
-                  <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
-                    <CheckCircle2 size={11} /> Guardado: {selectedLive.familiarNombre} · {selectedLive.familiarDocumento}
-                  </p>
-                )}
               </div>
             </div>
 

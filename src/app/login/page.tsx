@@ -27,8 +27,9 @@ export default function LoginPage() {
   };
 
   if (!loading && profile) {
-    if (profile.role === "esdomed") router.replace("/dashboard");
-    else router.replace("/medico");
+    if (profile.role === "medico") router.replace("/medico");
+    else if (profile.role === "psicologia") router.replace("/psicologia");
+    else router.replace("/dashboard");
   }
 
   return (

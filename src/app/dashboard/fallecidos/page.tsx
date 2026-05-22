@@ -9,8 +9,8 @@ import { Badge } from "@/components/ui/Badge";
 import { HeartPulse, Clock, X, ChevronDown, CheckCircle2, FileWarning } from "lucide-react";
 
 const COLUMNAS_SEGUIMIENTO = [
-  { key: "digitaSimmow",       keyEn: "digitaSimmowEn",       label: "Digita SIMMOW" },
   { key: "tramitaDefuncion",   keyEn: "tramitaDefuncionEn",   label: "Tramita Defunción" },
+  { key: "digitaSimmow",       keyEn: "digitaSimmowEn",       label: "Digita SIMMOW" },
   { key: "entregaCertificado", keyEn: "entregaCertificadoEn", label: "Entrega Certificado" },
   { key: "recibeDePs",         keyEn: "recibeDePsEn",         label: "Recibe Psic./T.S." },
 ] as const;

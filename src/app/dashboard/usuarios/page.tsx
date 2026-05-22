@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { UserProfile, UserRole } from "@/types";
-import { Users, ChevronDown } from "lucide-react";
+import { Users, ChevronDown, Pencil } from "lucide-react";
 import { SERVICIOS_HOSPITALARIOS } from "@/lib/servicios";
 
-interface NuevoUsuario { nombre: string; email: string; password: string; userRole: UserRole; servicios: string[]; }
-const EMPTY_FORM: NuevoUsuario = { nombre: "", email: "", password: "", userRole: "medico", servicios: [] };
+interface NuevoUsuario { nombre: string; email: string; password: string; userRole: UserRole; servicios: string[]; jvpm: string; }
+const EMPTY_FORM: NuevoUsuario = { nombre: "", email: "", password: "", userRole: "medico", servicios: [], jvpm: "" };
 
 const inputCls = "w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500";
 
@@ -21,6 +21,11 @@ export default function DashboardUsuariosPage() {
   const [error, setError] = useState("");
   const [deletingUid, setDeletingUid] = useState<string | null>(null);
   const [serviciosOpen, setServiciosOpen] = useState(false);
+
+  // Edit JVPM modal
+  const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
+  const [editJvpm, setEditJvpm] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const getToken = async () => (await user?.getIdToken()) ?? "";
 
@@ -68,6 +73,25 @@ export default function DashboardUsuariosPage() {
     const token = await getToken();
     await fetch(`/api/usuarios/${uid}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
     setDeletingUid(null); await fetchUsuarios();
+  };
+
+  const openEditJvpm = (u: UserProfile) => {
+    setEditingUser(u);
+    setEditJvpm(u.jvpm ?? "");
+  };
+
+  const handleSaveJvpm = async () => {
+    if (!editingUser) return;
+    setSavingEdit(true);
+    const token = await getToken();
+    await fetch(`/api/usuarios/${editingUser.uid}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ jvpm: editJvpm }),
+    });
+    setSavingEdit(false);
+    setEditingUser(null);
+    await fetchUsuarios();
   };
 
   const roleColors = {
@@ -135,49 +159,49 @@ export default function DashboardUsuariosPage() {
             </div>
 
             {form.userRole === "medico" && (
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-medium text-slate-500 mb-1.5">
-                  Servicios del médico
-                  {form.servicios.length > 0 && (
-                    <span className="ml-2 text-blue-600 dark:text-blue-400">
-                      ({form.servicios.length} seleccionado{form.servicios.length !== 1 ? "s" : ""})
+              <>
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">JVPM (sello)</label>
+                  <input type="text" value={form.jvpm} onChange={setField("jvpm")}
+                    placeholder="Ej: ABCD-1234"
+                    className={inputCls} />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5">
+                    Servicios del médico
+                    {form.servicios.length > 0 && (
+                      <span className="ml-2 text-blue-600 dark:text-blue-400">
+                        ({form.servicios.length} seleccionado{form.servicios.length !== 1 ? "s" : ""})
+                      </span>
+                    )}
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setServiciosOpen(o => !o)}
+                    className="w-full flex items-center justify-between px-3 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                  >
+                    <span className="truncate text-left">
+                      {form.servicios.length === 0 ? "Seleccionar servicios..." : form.servicios.join(", ")}
                     </span>
+                    <ChevronDown size={15} className={`flex-shrink-0 ml-2 transition-transform ${serviciosOpen ? "rotate-180" : ""}`} />
+                  </button>
+                  {serviciosOpen && (
+                    <div className="mt-1 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 max-h-52 overflow-y-auto shadow-lg">
+                      {SERVICIOS_HOSPITALARIOS.map(servicio => (
+                        <label key={servicio}
+                          className="flex items-center gap-2.5 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer text-sm text-slate-800 dark:text-slate-200">
+                          <input type="checkbox"
+                            checked={form.servicios.includes(servicio)}
+                            onChange={() => toggleServicio(servicio)}
+                            className="w-4 h-4 rounded border-slate-300 text-blue-600 accent-blue-600" />
+                          {servicio}
+                        </label>
+                      ))}
+                    </div>
                   )}
-                </label>
-
-                {/* Toggle button */}
-                <button
-                  type="button"
-                  onClick={() => setServiciosOpen(o => !o)}
-                  className="w-full flex items-center justify-between px-3 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-                >
-                  <span className="truncate text-left">
-                    {form.servicios.length === 0
-                      ? "Seleccionar servicios..."
-                      : form.servicios.join(", ")}
-                  </span>
-                  <ChevronDown size={15} className={`flex-shrink-0 ml-2 transition-transform ${serviciosOpen ? "rotate-180" : ""}`} />
-                </button>
-
-                {serviciosOpen && (
-                  <div className="mt-1 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 max-h-52 overflow-y-auto shadow-lg">
-                    {SERVICIOS_HOSPITALARIOS.map(servicio => (
-                      <label
-                        key={servicio}
-                        className="flex items-center gap-2.5 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer text-sm text-slate-800 dark:text-slate-200"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={form.servicios.includes(servicio)}
-                          onChange={() => toggleServicio(servicio)}
-                          className="w-4 h-4 rounded border-slate-300 text-blue-600 accent-blue-600"
-                        />
-                        {servicio}
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
+                </div>
+              </>
             )}
           </div>
           {error && <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-900 rounded-lg px-3 py-2">{error}</p>}
@@ -195,7 +219,7 @@ export default function DashboardUsuariosPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
-                {["Nombre", "Correo", "Rol", "Servicio(s)", ""].map(h => (
+                {["Nombre / JVPM", "Correo", "Rol", "Servicio(s)", ""].map(h => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">{h}</th>
                 ))}
               </tr>
@@ -206,7 +230,14 @@ export default function DashboardUsuariosPage() {
               )}
               {usuarios.map(u => (
                 <tr key={u.uid} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                  <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{u.nombre}</td>
+                  <td className="px-4 py-3">
+                    <p className="font-medium text-slate-900 dark:text-slate-100">{u.nombre}</p>
+                    {u.role === "medico" && (
+                      <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 font-mono">
+                        {u.jvpm ? `JVPM: ${u.jvpm}` : <span className="italic">Sin JVPM</span>}
+                      </p>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-slate-500">{u.email}</td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${roleColors[u.role] || roleColors.medico}`}>
@@ -217,15 +248,57 @@ export default function DashboardUsuariosPage() {
                     <span className="line-clamp-2">{displayServicios(u)}</span>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <button onClick={() => handleDelete(u.uid, u.nombre)} disabled={deletingUid === u.uid}
-                      className="text-xs text-red-500 hover:text-red-600 dark:hover:text-red-400 disabled:opacity-40 transition-colors">
-                      {deletingUid === u.uid ? "Eliminando..." : "Eliminar"}
-                    </button>
+                    <div className="flex items-center justify-end gap-3">
+                      {u.role === "medico" && (
+                        <button onClick={() => openEditJvpm(u)}
+                          title="Editar JVPM"
+                          className="text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">
+                          <Pencil size={14} />
+                        </button>
+                      )}
+                      <button onClick={() => handleDelete(u.uid, u.nombre)} disabled={deletingUid === u.uid}
+                        className="text-xs text-red-500 hover:text-red-600 dark:hover:text-red-400 disabled:opacity-40 transition-colors">
+                        {deletingUid === u.uid ? "Eliminando..." : "Eliminar"}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Modal editar JVPM */}
+      {editingUser && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+            <div>
+              <p className="text-xs text-slate-400 uppercase tracking-widest mb-0.5">Editar médico</p>
+              <h3 className="font-bold text-slate-900 dark:text-slate-100">{editingUser.nombre}</h3>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1.5">JVPM (sello)</label>
+              <input
+                type="text"
+                value={editJvpm}
+                onChange={e => setEditJvpm(e.target.value)}
+                placeholder="Ej: ABCD-1234"
+                className={inputCls}
+                autoFocus
+              />
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button onClick={() => setEditingUser(null)}
+                className="flex-1 py-2.5 text-sm font-medium rounded-lg border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                Cancelar
+              </button>
+              <button onClick={handleSaveJvpm} disabled={savingEdit}
+                className="flex-1 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded-lg disabled:opacity-50 transition-colors">
+                {savingEdit ? "Guardando..." : "Guardar"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

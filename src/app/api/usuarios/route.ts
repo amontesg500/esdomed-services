@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   const role = await getCallerRole(req);
   if (role !== "esdomed") return NextResponse.json({ error: "No autorizado" }, { status: 403 });
 
-  const { nombre, email, password, userRole, servicios } = await req.json();
+  const { nombre, email, password, userRole, servicios, jvpm } = await req.json();
 
   if (!nombre || !email || !password || !userRole) {
     return NextResponse.json({ error: "Faltan campos requeridos" }, { status: 400 });
@@ -45,6 +45,7 @@ export async function POST(req: NextRequest) {
     role: userRole,
     servicios: serviciosArr,
     servicio: serviciosArr[0] ?? "",
+    ...(userRole === "medico" && jvpm ? { jvpm } : {}),
     createdAt: FieldValue.serverTimestamp(),
   });
 

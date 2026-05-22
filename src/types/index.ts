@@ -5,8 +5,9 @@ export interface UserProfile {
   email: string;
   nombre: string;
   role: UserRole;
-  servicio?: string;   // solo médicos — campo legacy (un servicio)
+  servicio?: string;    // solo médicos — campo legacy (un servicio)
   servicios?: string[]; // solo médicos — multi-servicio (campo nuevo)
+  jvpm?: string;        // solo médicos — sello/firma
   createdAt: Date;
 }
 
@@ -69,6 +70,14 @@ export interface NotificacionFallecido {
   familiarDui?: string;
   familiarTelefono?: string;
   familiarParentesco?: string;
+  // Cierre de trámite
+  tramiteCerrado?: boolean;
+  tramiteCerradoPor?: string;
+  tramiteCerradoEn?: Date;
+  tramiteDesbloqueado?: boolean;
+  tramiteDesbloqueadoPor?: string;
+  tramiteDesbloqueadoEn?: Date;
+  tramiteJustificacion?: string;
 }
 
 export type EstadoImpresion = "pendiente" | "impreso";

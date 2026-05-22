@@ -6,7 +6,7 @@ import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { NotificacionFallecido, UserProfile } from "@/types";
 import { Badge } from "@/components/ui/Badge";
-import { HeartPulse, Clock, X, ChevronDown, CheckCircle2, FileWarning } from "lucide-react";
+import { HeartPulse, Clock, X, ChevronDown, CheckCircle2, FileWarning, Lock, LockOpen } from "lucide-react";
 
 const COLUMNAS_SEGUIMIENTO = [
   { key: "tramitaDefuncion",   keyEn: "tramitaDefuncionEn",   label: "Tramita Defunción" },
@@ -18,7 +18,7 @@ const COLUMNAS_SEGUIMIENTO = [
 type CampoSeguimiento = typeof COLUMNAS_SEGUIMIENTO[number]["key"];
 type ActiveTab = "expediente" | "seguimiento" | "certificado";
 
-const selectCls = "w-full appearance-none bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg pl-3 pr-8 py-2 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 cursor-pointer shadow-sm";
+const selectCls = "w-full appearance-none bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg pl-3 pr-8 py-2 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 cursor-pointer shadow-sm disabled:cursor-not-allowed";
 
 export default function DashboardFallecidosPage() {
   const { profile } = useAuth();
@@ -29,6 +29,9 @@ export default function DashboardFallecidosPage() {
   const [selected, setSelected] = useState<NotificacionFallecido | null>(null);
   const [activeTab, setActiveTab] = useState<ActiveTab>("expediente");
   const [saving, setSaving] = useState(false);
+  const [cerrando, setCerrando] = useState(false);
+  const [desbloqueando, setDesbloqueando] = useState(false);
+  const [justificacion, setJustificacion] = useState("");
   const [updatingCell, setUpdatingCell] = useState<string | null>(null);
   const [familiarNombre, setFamiliarNombre] = useState("");
   const [familiarDui, setFamiliarDui] = useState("");
@@ -51,6 +54,7 @@ export default function DashboardFallecidosPage() {
   useEffect(() => {
     if (!selected) return;
     setActiveTab("expediente");
+    setJustificacion("");
     setFamiliarNombre(selected.familiarNombre ?? "");
     setFamiliarDui(selected.familiarDui ?? "");
     setFamiliarTelefono(selected.familiarTelefono ?? "");
@@ -71,6 +75,32 @@ export default function DashboardFallecidosPage() {
       confirmadoEn: Timestamp.now(),
     });
     setSaving(false);
+  };
+
+  const cerrarTramite = async () => {
+    if (!selected?.id || !profile) return;
+    setCerrando(true);
+    await updateDoc(doc(db, "notificaciones_fallecidos", selected.id), {
+      tramiteCerrado: true,
+      tramiteCerradoPor: profile.nombre,
+      tramiteCerradoEn: Timestamp.now(),
+      tramiteDesbloqueado: false,
+      tramiteJustificacion: null,
+    });
+    setCerrando(false);
+  };
+
+  const desbloquear = async () => {
+    if (!selected?.id || !profile || !justificacion.trim()) return;
+    setDesbloqueando(true);
+    await updateDoc(doc(db, "notificaciones_fallecidos", selected.id), {
+      tramiteDesbloqueado: true,
+      tramiteDesbloqueadoPor: profile.nombre,
+      tramiteDesbloqueadoEn: Timestamp.now(),
+      tramiteJustificacion: justificacion.trim(),
+    });
+    setDesbloqueando(false);
+    setJustificacion("");
   };
 
   const asignar = async (campo: CampoSeguimiento, nombre: string) => {
@@ -142,6 +172,13 @@ export default function DashboardFallecidosPage() {
     { id: "seguimiento", label: "Seguimiento" },
     { id: "certificado", label: "Certificado" },
   ];
+
+  // Estado del trámite
+  const isLocked   = !!(selectedLive?.tramiteCerrado && !selectedLive.tramiteDesbloqueado);
+  const isUnlocked = !!(selectedLive?.tramiteCerrado && selectedLive.tramiteDesbloqueado);
+  const todos4     = selectedLive ? COLUMNAS_SEGUIMIENTO.every(col => !!selectedLive[col.key]) : false;
+  const puedeCerrar = todos4 && selectedLive?.estado === "confirmado" && (!selectedLive.tramiteCerrado || isUnlocked);
+  const isAdmin = profile?.role === "admin";
 
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-5">
@@ -262,6 +299,16 @@ export default function DashboardFallecidosPage() {
                             ))}
                             <span className="text-xs text-slate-500 ml-1">{pasos}/{COLUMNAS_SEGUIMIENTO.length}</span>
                           </div>
+                          {n.tramiteCerrado && !n.tramiteDesbloqueado && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 px-1.5 py-0.5 rounded-md">
+                              <Lock size={9} /> Cerrado
+                            </span>
+                          )}
+                          {n.tramiteDesbloqueado && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-900 px-1.5 py-0.5 rounded-md">
+                              <LockOpen size={9} /> Desbloqueado
+                            </span>
+                          )}
                           {n.estadoEntregaCertificado === "pendiente" && (
                             <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-orange-700 dark:text-orange-400 bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-900 px-1.5 py-0.5 rounded-md">
                               <FileWarning size={10} /> Cert. pendiente
@@ -311,6 +358,16 @@ export default function DashboardFallecidosPage() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
+                  {isLocked && (
+                    <span className="flex items-center gap-1 text-xs font-semibold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 px-2 py-1 rounded-lg">
+                      <Lock size={11} /> Cerrado
+                    </span>
+                  )}
+                  {isUnlocked && (
+                    <span className="flex items-center gap-1 text-xs font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-900 px-2 py-1 rounded-lg">
+                      <LockOpen size={11} /> Desbloqueado
+                    </span>
+                  )}
                   <Badge estado={selectedLive.estado} />
                   <button onClick={() => setSelected(null)}
                     className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition-colors">
@@ -320,22 +377,47 @@ export default function DashboardFallecidosPage() {
               </div>
 
               {/* Tab bar */}
-              <div className="flex gap-0 -mx-5 px-5 border-b border-slate-200 dark:border-slate-800">
+              <div className="flex -mx-5 px-5 border-b border-slate-200 dark:border-slate-800">
                 {TABS.map(tab => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
+                  <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                     className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                       activeTab === tab.id
                         ? "border-blue-600 text-blue-600 dark:text-blue-400"
                         : "border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-                    }`}
-                  >
+                    }`}>
                     {tab.label}
                   </button>
                 ))}
               </div>
             </div>
+
+            {/* Locked banner */}
+            {isLocked && (
+              <div className="mx-5 mt-4 flex items-center gap-3 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-3 flex-shrink-0">
+                <Lock size={15} className="text-slate-500 flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Trámite cerrado — solo lectura</p>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Cerrado por <span className="font-medium">{selectedLive.tramiteCerradoPor}</span>
+                    {selectedLive.tramiteCerradoEn && <> · {formatHora(selectedLive.tramiteCerradoEn)}</>}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Unlocked banner */}
+            {isUnlocked && (
+              <div className="mx-5 mt-4 flex items-center gap-3 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-900 rounded-xl px-4 py-3 flex-shrink-0">
+                <LockOpen size={15} className="text-amber-600 flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">Registro desbloqueado</p>
+                  <p className="text-xs text-amber-600 dark:text-amber-500 mt-0.5">
+                    Por <span className="font-medium">{selectedLive.tramiteDesbloqueadoPor}</span>
+                    {selectedLive.tramiteJustificacion && <> · "{selectedLive.tramiteJustificacion}"</>}
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Tab content */}
             <div className="overflow-y-auto flex-1 p-5 space-y-4">
@@ -343,7 +425,6 @@ export default function DashboardFallecidosPage() {
               {/* Tab: Expediente */}
               {activeTab === "expediente" && (
                 <>
-                  {/* Datos del caso */}
                   <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-x-6 gap-y-3">
                     <InfoCell label="Fecha defunción" value={formatFecha(selectedLive.fechaDefuncion)} />
                     <InfoCell label="Servicio" value={selectedLive.servicio} />
@@ -357,23 +438,21 @@ export default function DashboardFallecidosPage() {
                     )}
                   </div>
 
-                  {/* Familiar */}
                   <div>
                     <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-3">Familiar</p>
                     <div className="space-y-3">
                       <div className="grid grid-cols-2 gap-3">
-                        <FamiliarInput label="Nombre completo" value={familiarNombre} onChange={setFamiliarNombre} placeholder="Nombre del familiar" className="col-span-2" />
-                        <FamiliarInput label="DUI" value={familiarDui} onChange={setFamiliarDui} placeholder="00000000-0" />
-                        <FamiliarInput label="Teléfono" value={familiarTelefono} onChange={setFamiliarTelefono} placeholder="0000-0000" />
-                        <FamiliarInput label="Parentesco" value={familiarParentesco} onChange={setFamiliarParentesco} placeholder="Ej: Hijo, Cónyuge…" className="col-span-2" />
+                        <FamiliarInput label="Nombre completo" value={familiarNombre} onChange={setFamiliarNombre} placeholder="Nombre del familiar" className="col-span-2" disabled={isLocked} />
+                        <FamiliarInput label="DUI" value={familiarDui} onChange={setFamiliarDui} placeholder="00000000-0" disabled={isLocked} />
+                        <FamiliarInput label="Teléfono" value={familiarTelefono} onChange={setFamiliarTelefono} placeholder="0000-0000" disabled={isLocked} />
+                        <FamiliarInput label="Parentesco" value={familiarParentesco} onChange={setFamiliarParentesco} placeholder="Ej: Hijo, Cónyuge…" className="col-span-2" disabled={isLocked} />
                       </div>
-                      <button
-                        onClick={guardarFamiliar}
-                        disabled={savingFamiliar}
-                        className="w-full py-2 bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 dark:hover:bg-slate-600 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors"
-                      >
-                        {savingFamiliar ? "Guardando..." : "Guardar datos familiar"}
-                      </button>
+                      {!isLocked && (
+                        <button onClick={guardarFamiliar} disabled={savingFamiliar}
+                          className="w-full py-2 bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 dark:hover:bg-slate-600 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors">
+                          {savingFamiliar ? "Guardando..." : "Guardar datos familiar"}
+                        </button>
+                      )}
                       {selectedLive.familiarNombre && (
                         <div className="bg-green-50 dark:bg-green-500/10 px-3 py-2.5 rounded-lg space-y-1">
                           <p className="flex items-center gap-1.5 text-xs font-semibold text-green-700 dark:text-green-400">
@@ -403,7 +482,7 @@ export default function DashboardFallecidosPage() {
                         <div className="relative">
                           <select
                             value={valor ?? ""}
-                            disabled={isLoading}
+                            disabled={isLoading || isLocked}
                             onChange={e => asignar(col.key, e.target.value)}
                             className={selectCls}
                           >
@@ -448,7 +527,7 @@ export default function DashboardFallecidosPage() {
                     <div className="relative">
                       <select
                         value={selectedLive.estadoEntregaCertificado ?? ""}
-                        disabled={updatingCell === "estadoEntregaCertificado"}
+                        disabled={updatingCell === "estadoEntregaCertificado" || isLocked}
                         onChange={e => actualizarCampo("estadoEntregaCertificado", e.target.value || null)}
                         className={selectCls}
                       >
@@ -465,7 +544,7 @@ export default function DashboardFallecidosPage() {
                     <div className="relative">
                       <select
                         value={selectedLive.tipoCertificado ?? ""}
-                        disabled={updatingCell === "tipoCertificado"}
+                        disabled={updatingCell === "tipoCertificado" || isLocked}
                         onChange={e => actualizarCampo("tipoCertificado", e.target.value || null)}
                         className={selectCls}
                       >
@@ -477,13 +556,13 @@ export default function DashboardFallecidosPage() {
                     </div>
                   </div>
 
-                  <label className="flex items-start gap-2.5 cursor-pointer group select-none">
+                  <label className={`flex items-start gap-2.5 select-none ${isLocked ? "opacity-50" : "cursor-pointer group"}`}>
                     <input
                       type="checkbox"
                       checked={selectedLive.actualizoFieh ?? false}
-                      disabled={updatingCell === "actualizoFieh"}
+                      disabled={updatingCell === "actualizoFieh" || isLocked}
                       onChange={e => actualizarCampo("actualizoFieh", e.target.checked)}
-                      className="mt-0.5 w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 flex-shrink-0 cursor-pointer accent-blue-600"
+                      className="mt-0.5 w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 flex-shrink-0 cursor-pointer accent-blue-600 disabled:cursor-not-allowed"
                     />
                     <span className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed group-hover:text-slate-900 dark:group-hover:text-slate-200 transition-colors">
                       ¿Actualizó FIEH en Archivero Virtual y Datos en Simmow al momento de entregar certificado manual?
@@ -494,15 +573,49 @@ export default function DashboardFallecidosPage() {
               )}
             </div>
 
-            {/* Footer: confirmar */}
-            {selectedLive.estado === "pendiente" && (
-              <div className="px-5 py-4 border-t border-slate-200 dark:border-slate-800 flex-shrink-0">
+            {/* Footer */}
+            <div className="px-5 pb-5 flex-shrink-0 space-y-3">
+
+              {/* Confirmar notificación */}
+              {selectedLive.estado === "pendiente" && !isLocked && (
                 <button onClick={confirmar} disabled={saving}
                   className="w-full py-2.5 text-sm font-semibold text-white bg-green-700 rounded-xl hover:bg-green-600 disabled:opacity-50 transition-colors">
                   {saving ? "Confirmando..." : "Confirmar de leído y notificado"}
                 </button>
-              </div>
-            )}
+              )}
+
+              {/* Cerrar trámite */}
+              {puedeCerrar && (
+                <button onClick={cerrarTramite} disabled={cerrando}
+                  className="w-full py-2.5 text-sm font-semibold text-white bg-slate-800 dark:bg-slate-700 rounded-xl hover:bg-slate-700 dark:hover:bg-slate-600 disabled:opacity-50 transition-colors flex items-center justify-center gap-2">
+                  <Lock size={14} />
+                  {cerrando ? "Cerrando..." : "Cerrar trámite"}
+                </button>
+              )}
+
+              {/* Admin: desbloquear */}
+              {isLocked && isAdmin && (
+                <div className="border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/50 rounded-xl p-4 space-y-3">
+                  <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-widest">
+                    Desbloquear registro
+                  </p>
+                  <textarea
+                    value={justificacion}
+                    onChange={e => setJustificacion(e.target.value)}
+                    placeholder="Justificación para el desbloqueo..."
+                    rows={2}
+                    className="w-full bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-amber-500 placeholder-slate-400"
+                  />
+                  <button
+                    onClick={desbloquear}
+                    disabled={!justificacion.trim() || desbloqueando}
+                    className="w-full py-2.5 text-sm font-semibold text-white bg-amber-600 hover:bg-amber-500 rounded-xl disabled:opacity-50 transition-colors flex items-center justify-center gap-2">
+                    <LockOpen size={14} />
+                    {desbloqueando ? "Desbloqueando..." : "Desbloquear registro"}
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -519,8 +632,8 @@ function InfoCell({ label, value, className = "" }: { label: string; value: stri
   );
 }
 
-function FamiliarInput({ label, value, onChange, placeholder, className = "" }: {
-  label: string; value: string; onChange: (v: string) => void; placeholder?: string; className?: string;
+function FamiliarInput({ label, value, onChange, placeholder, className = "", disabled = false }: {
+  label: string; value: string; onChange: (v: string) => void; placeholder?: string; className?: string; disabled?: boolean;
 }) {
   return (
     <div className={className}>
@@ -530,7 +643,8 @@ function FamiliarInput({ label, value, onChange, placeholder, className = "" }: 
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+        disabled={disabled}
+        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
       />
     </div>
   );

@@ -18,10 +18,17 @@ export interface SolicitudTraslado {
   medicoId: string;
   medicoNombre: string;
   medicoServicio: string;
-  pacienteNombre: string;
+  
+  tipoTraslado?: "servicio_cama" | "interno" | "intercambio";
+  
+  pacienteNombre?: string;
   pacienteExpediente: string;
+  
+  pacienteBNombre?: string;
+  pacienteBExpediente?: string;
+
   servicioOrigen: string;
-  servicioDestino: string;
+  servicioDestino?: string;
   camaOrigen: string;
   camaDestino: string;
   motivoTraslado: string;

@@ -76,7 +76,8 @@ export default function DashboardPage() {
   const recent: RecentItem[] = [
     ...traslados.map(t => ({
       id: t.id!, tipo: "traslado" as const,
-      titulo: t.pacienteNombre, subtitulo: `${t.servicioOrigen} → ${t.servicioDestino}`,
+      titulo: t.pacienteNombre || `Exp. ${t.pacienteExpediente}`, 
+      subtitulo: t.tipoTraslado === "intercambio" ? "Intercambio de camas" : `${t.servicioOrigen} → ${t.tipoTraslado === "interno" ? t.servicioOrigen : t.servicioDestino}`,
       medico: t.medicoNombre, estado: t.estado, ts: t.creadoEn,
     })),
     ...fallecidos.map(f => ({

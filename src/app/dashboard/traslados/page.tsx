@@ -6,7 +6,7 @@ import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { SolicitudTraslado, EstadoTraslado } from "@/types";
 import { Badge } from "@/components/ui/Badge";
-import { ArrowRightLeft, Clock, X } from "lucide-react";
+import { ArrowRightLeft, Clock, X, Building2, RefreshCw } from "lucide-react";
 
 const FILTROS: { label: string; value: EstadoTraslado | "todos" }[] = [
   { label: "Todos", value: "todos" },
@@ -44,6 +44,13 @@ export default function DashboardTrasladosPage() {
     setSaving(false); setSelected(null); setNotas("");
   };
 
+  const getTipoLabel = (tipo?: string) => {
+    if (tipo === "servicio_cama") return { label: "Servicio a Servicio", color: "text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/50 border-blue-200 dark:border-blue-800", icon: Building2 };
+    if (tipo === "interno") return { label: "Interno", color: "text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/50 border-purple-200 dark:border-purple-800", icon: ArrowRightLeft };
+    if (tipo === "intercambio") return { label: "Intercambio", color: "text-orange-700 dark:text-orange-300 bg-orange-100 dark:bg-orange-900/50 border-orange-200 dark:border-orange-800", icon: RefreshCw };
+    return { label: "Traslado", color: "text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700", icon: ArrowRightLeft };
+  };
+
   return (
     <div className="p-4 md:p-6 max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-6">
@@ -76,45 +83,103 @@ export default function DashboardTrasladosPage() {
         {filtered.length === 0 && (
           <p className="text-sm text-slate-500 py-10 text-center">Sin solicitudes en este filtro.</p>
         )}
-        {filtered.map(t => (
-          <div key={t.id} onClick={() => { setSelected(t); setNotas(t.notasEsdomed ?? ""); }}
-            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 cursor-pointer hover:border-blue-300 dark:hover:border-blue-800 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-all">
-            <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <p className="font-medium text-slate-900 dark:text-slate-100 text-sm">{t.pacienteNombre}</p>
-                <p className="text-xs text-slate-500 mt-0.5">Exp. {t.pacienteExpediente}</p>
-                <p className="text-xs text-slate-500 mt-1">{t.servicioOrigen} / Cama {t.camaOrigen} → {t.servicioDestino} / Cama {t.camaDestino}</p>
-                <p className="text-xs text-slate-500 mt-1">Dr. {t.medicoNombre} · {t.medicoServicio}</p>
+        {filtered.map(t => {
+          const typeInfo = getTipoLabel(t.tipoTraslado);
+          const Icon = typeInfo.icon;
+          
+          return (
+            <div key={t.id} onClick={() => { setSelected(t); setNotas(t.notasEsdomed ?? ""); }}
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 cursor-pointer hover:border-blue-300 dark:hover:border-blue-800 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-all">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${typeInfo.color}`}>
+                      <Icon size={10} /> {typeInfo.label}
+                    </span>
+                  </div>
+
+                  {t.tipoTraslado === "intercambio" ? (
+                    <div className="space-y-1 mt-2">
+                      <div className="text-sm">
+                        <span className="font-semibold text-slate-900 dark:text-slate-100">Exp. {t.pacienteExpediente}</span>
+                        {t.pacienteNombre && <span className="text-slate-500 ml-1">({t.pacienteNombre})</span>}
+                        <span className="text-xs text-slate-500 ml-2">↔</span>
+                        <span className="font-semibold text-slate-900 dark:text-slate-100 ml-2">Exp. {t.pacienteBExpediente}</span>
+                        {t.pacienteBNombre && <span className="text-slate-500 ml-1">({t.pacienteBNombre})</span>}
+                      </div>
+                      <p className="text-xs text-slate-500">Servicios: {t.servicioOrigen} / {t.servicioDestino}</p>
+                    </div>
+                  ) : (
+                    <div>
+                      <p className="font-medium text-slate-900 dark:text-slate-100 text-sm">
+                        Exp. {t.pacienteExpediente} {t.pacienteNombre ? `- ${t.pacienteNombre}` : ""}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-1">
+                        {t.servicioOrigen} (Cama {t.camaOrigen}) → {t.tipoTraslado === "interno" ? t.servicioOrigen : t.servicioDestino} (Cama {t.camaDestino})
+                      </p>
+                    </div>
+                  )}
+
+                  <p className="text-xs text-slate-500 mt-2">Dr. {t.medicoNombre} · {t.medicoServicio}</p>
+                </div>
+                <Badge estado={t.estado} />
               </div>
-              <Badge estado={t.estado} />
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {selected && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl w-full max-w-lg">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl w-full max-w-xl">
             <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-              <h2 className="font-bold text-slate-900 dark:text-slate-100 font-heading">Solicitud de traslado</h2>
+              <h2 className="font-bold text-slate-900 dark:text-slate-100 font-heading">
+                {selected.tipoTraslado === "intercambio" ? "Solicitud de Intercambio" : "Solicitud de Traslado"}
+              </h2>
               <button onClick={() => setSelected(null)} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors"><X size={16} /></button>
             </div>
-            <div className="p-5 space-y-3 text-sm">
-              <Row label="Paciente"    value={selected.pacienteNombre} />
-              <Row label="Expediente"  value={selected.pacienteExpediente} />
-              <Row label="Origen"      value={`${selected.servicioOrigen} / Cama ${selected.camaOrigen}`} />
-              <Row label="Destino"     value={`${selected.servicioDestino} / Cama ${selected.camaDestino}`} />
+            <div className="p-5 space-y-4 text-sm">
+              
+              {selected.tipoTraslado === "intercambio" ? (
+                <>
+                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-200 dark:border-slate-700">
+                    <p className="text-xs font-semibold uppercase text-slate-500 mb-2">Paciente A (Se mueve a cama {selected.camaDestino})</p>
+                    <Row label="Expediente"  value={selected.pacienteExpediente} />
+                    <Row label="Nombre"      value={selected.pacienteNombre || "No especificado"} />
+                    <Row label="Ubicación"   value={`${selected.servicioOrigen} / Cama ${selected.camaOrigen}`} />
+                  </div>
+                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-200 dark:border-slate-700">
+                    <p className="text-xs font-semibold uppercase text-slate-500 mb-2">Paciente B (Se mueve a cama {selected.camaOrigen})</p>
+                    <Row label="Expediente"  value={selected.pacienteBExpediente} />
+                    <Row label="Nombre"      value={selected.pacienteBNombre || "No especificado"} />
+                    <Row label="Ubicación"   value={`${selected.servicioDestino} / Cama ${selected.camaDestino}`} />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <Row label="Expediente"  value={selected.pacienteExpediente} />
+                  <Row label="Paciente"    value={selected.pacienteNombre || "No especificado"} />
+                  <Row label="Origen"      value={`${selected.servicioOrigen} / Cama ${selected.camaOrigen}`} />
+                  <Row label="Destino"     value={`${selected.tipoTraslado === "interno" ? selected.servicioOrigen : selected.servicioDestino} / Cama ${selected.camaDestino}`} />
+                </>
+              )}
+              
+              <div className="h-px bg-slate-200 dark:bg-slate-800 my-2" />
+
               <Row label="Motivo"      value={selected.motivoTraslado} />
               <Row label="Médico"      value={`Dr. ${selected.medicoNombre} (${selected.medicoServicio})`} />
               <Row label="Estado"      value={<Badge estado={selected.estado} />} />
-              <div>
+              
+              <div className="pt-2">
                 <label className="block text-xs font-medium text-slate-500 mb-1.5">Notas ESDOMED</label>
                 <textarea value={notas} onChange={e => setNotas(e.target.value)} rows={3}
                   placeholder="Observaciones o motivo de rechazo..."
                   className={inputCls} />
               </div>
             </div>
-            <div className="p-4 border-t border-slate-200 dark:border-slate-800 flex gap-2 justify-end">
+            
+            <div className="p-4 border-t border-slate-200 dark:border-slate-800 flex flex-wrap gap-2 justify-end bg-slate-50 dark:bg-slate-900/50 rounded-b-2xl">
               <button onClick={() => actualizarEstado("rechazado")} disabled={saving}
                 className="px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950 rounded-lg hover:bg-red-100 dark:hover:bg-red-900 disabled:opacity-50 transition-colors">
                 Rechazar
@@ -138,8 +203,8 @@ export default function DashboardTrasladosPage() {
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex gap-3">
-      <span className="text-slate-500 w-24 shrink-0 text-xs pt-0.5">{label}</span>
-      <span className="text-slate-800 dark:text-slate-200 font-medium text-sm">{value}</span>
+      <span className="text-slate-500 w-24 shrink-0 text-xs pt-0.5 font-medium">{label}</span>
+      <span className="text-slate-800 dark:text-slate-200 font-medium text-sm flex-1">{value}</span>
     </div>
   );
 }

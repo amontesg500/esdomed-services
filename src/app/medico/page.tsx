@@ -65,7 +65,8 @@ export default function MedicoDashboardPage() {
   const recent = [
     ...traslados.slice(0, 5).map(t => ({
       id: t.id!, tipo: "traslado" as const,
-      titulo: t.pacienteNombre, subtitulo: `${t.servicioOrigen} → ${t.servicioDestino}`,
+      titulo: t.pacienteNombre || `Exp. ${t.pacienteExpediente}`, 
+      subtitulo: t.tipoTraslado === "intercambio" ? "Intercambio de camas" : `${t.servicioOrigen} → ${t.tipoTraslado === "interno" ? t.servicioOrigen : t.servicioDestino}`,
       estado: t.estado, ts: t.creadoEn,
     })),
     ...impresiones.slice(0, 5).map(i => ({

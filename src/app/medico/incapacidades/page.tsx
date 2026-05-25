@@ -5,7 +5,7 @@ import Link from "next/link";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import { FileText, Plus, CheckCircle2, Clock } from "lucide-react";
+import { FileText, Plus, CheckCircle2, Clock, Pencil } from "lucide-react";
 import type { SolicitudIncapacidad } from "@/types";
 import { toDate, formatFecha } from "@/lib/pacientes/helpers";
 
@@ -118,6 +118,15 @@ export default function MedicoIncapacidadesPage() {
                     </p>
                   )}
                 </div>
+                {s.estado === "pendiente" && (
+                  <Link
+                    href={`/medico/incapacidades/${s.id}/editar`}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950 hover:bg-blue-100 dark:hover:bg-blue-900 rounded-lg transition-colors flex-shrink-0"
+                  >
+                    <Pencil size={12} />
+                    Editar
+                  </Link>
+                )}
               </div>
             </div>
           ))}

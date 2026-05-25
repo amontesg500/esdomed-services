@@ -152,13 +152,13 @@ export function ConstanciaPrintLayout({ incapacidad, paciente }: Props) {
             </td>
           </tr>
 
-          {/* Sello / Firma — espacio vacío grande */}
+          {/* Sello / Firma — espacio vacío grande, etiqueta al fondo */}
           <tr>
-            <td colSpan={3} className="value h-[80px] text-center align-bottom pb-1">
-              <div className="text-[9px] font-semibold">SELLO DEL MEDICO</div>
+            <td colSpan={3} className="value sello-firma-cell">
+              <div className="sello-firma-label">SELLO DEL MEDICO</div>
             </td>
-            <td colSpan={3} className="value h-[80px] text-center align-bottom pb-1">
-              <div className="text-[9px] font-semibold">FIRMA DEL MEDICO RESPONSABLE</div>
+            <td colSpan={3} className="value sello-firma-cell">
+              <div className="sello-firma-label">FIRMA DEL MEDICO RESPONSABLE</div>
             </td>
           </tr>
 
@@ -273,6 +273,17 @@ export function ConstanciaPrintLayout({ incapacidad, paciente }: Props) {
         }
         .constancia-table td.value {
           background: white;
+        }
+        .constancia-table td.sello-firma-cell {
+          height: 90px;
+          vertical-align: bottom;
+          padding: 0 6px 3px;
+        }
+        .sello-firma-label {
+          font-size: 9px;
+          font-weight: 600;
+          text-align: center;
+          line-height: 1;
         }
 
         @media print {

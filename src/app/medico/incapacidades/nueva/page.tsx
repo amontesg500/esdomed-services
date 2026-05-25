@@ -11,20 +11,17 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   ArrowLeft, Search, AlertTriangle, Save, CheckCircle2, User2,
 } from "lucide-react";
-import type { CondicionEgresoIncapacidad, Paciente } from "@/types";
+import type { Paciente } from "@/types";
 import {
   calcularEdad, formatFecha, nombreCompleto, toDate,
 } from "@/lib/pacientes/helpers";
+import { calcularFechaHasta } from "@/lib/incapacidades/helpers";
 import {
-  calcularFechaHasta, formatFechaCorta,
-} from "@/lib/incapacidades/helpers";
+  IncapacidadFormFields, type IncapacidadFormValue,
+} from "@/components/incapacidades/IncapacidadFormFields";
 
 const inputCls =
   "w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm";
-
-const labelCls = "block text-xs font-medium text-slate-500 mb-1.5";
-
-const textareaCls = `${inputCls} min-h-[80px] resize-y`;
 
 export default function NuevaIncapacidadPage() {
   const router = useRouter();
@@ -38,22 +35,19 @@ export default function NuevaIncapacidadPage() {
 
   // Form
   const hoy = toDateInput(new Date());
-  const [fechaAlta, setFechaAlta] = useState(hoy);
-  const [diasIncapacidad, setDiasIncapacidad] = useState("");
-  const [fechaDesde, setFechaDesde] = useState(hoy);
-  const [diagnosticoEgreso, setDiagnosticoEgreso] = useState("");
-  const [tratamientoAlta, setTratamientoAlta] = useState("");
-  const [condicionEgreso, setCondicionEgreso] = useState<CondicionEgresoIncapacidad>("vivo");
-  const [recomendaciones, setRecomendaciones] = useState("");
-  const [seguimiento, setSeguimiento] = useState("");
+  const [form, setForm] = useState<IncapacidadFormValue>({
+    fechaAlta: hoy,
+    diasIncapacidad: "",
+    fechaDesde: hoy,
+    diagnosticoEgreso: "",
+    tratamientoAlta: "",
+    condicionEgreso: "vivo",
+    recomendaciones: "",
+    seguimiento: "",
+  });
 
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const dias = parseInt(diasIncapacidad, 10);
-  const fechaHasta = !isNaN(dias) && dias > 0 && fechaDesde
-    ? calcularFechaHasta(new Date(fechaDesde), dias)
-    : null;
 
   const buscarPaciente = async () => {
     const exp = expedienteBusqueda.trim();
@@ -91,15 +85,16 @@ export default function NuevaIncapacidadPage() {
 
   const guardar = async () => {
     if (!user || !profile || !paciente) return;
-    if (!diasIncapacidad || dias <= 0) { setError("Los días de incapacidad deben ser mayor a 0."); return; }
-    if (!diagnosticoEgreso.trim()) { setError("El diagnóstico de egreso es obligatorio."); return; }
-    if (!tratamientoAlta.trim())   { setError("El tratamiento al alta es obligatorio."); return; }
+    const dias = parseInt(form.diasIncapacidad, 10);
+    if (!form.diasIncapacidad || dias <= 0) { setError("Los días de incapacidad deben ser mayor a 0."); return; }
+    if (!form.diagnosticoEgreso.trim()) { setError("El diagnóstico de egreso es obligatorio."); return; }
+    if (!form.tratamientoAlta.trim())   { setError("El tratamiento al alta es obligatorio."); return; }
 
     setError(null);
     setGuardando(true);
     try {
-      const fAlta   = new Date(fechaAlta);
-      const fDesde  = new Date(fechaDesde);
+      const fAlta   = new Date(form.fechaAlta);
+      const fDesde  = new Date(form.fechaDesde);
       const fHasta  = calcularFechaHasta(fDesde, dias);
 
       const doc: Record<string, unknown> = {
@@ -117,18 +112,18 @@ export default function NuevaIncapacidadPage() {
         diasIncapacidad: dias,
         fechaDesde: Timestamp.fromDate(fDesde),
         fechaHasta: Timestamp.fromDate(fHasta),
-        diagnosticoEgreso: diagnosticoEgreso.trim(),
-        tratamientoAlta: tratamientoAlta.trim(),
-        condicionEgreso,
+        diagnosticoEgreso: form.diagnosticoEgreso.trim(),
+        tratamientoAlta: form.tratamientoAlta.trim(),
+        condicionEgreso: form.condicionEgreso,
         // Estado
         estado: "pendiente" as const,
         creadoEn: Timestamp.now(),
       };
 
-      if (profile.jvpm)          doc.medicoJvpm = profile.jvpm;
-      if (paciente.camaActual)   doc.camaPaciente = paciente.camaActual;
-      if (recomendaciones.trim()) doc.recomendaciones = recomendaciones.trim();
-      if (seguimiento.trim())     doc.seguimiento = seguimiento.trim();
+      if (profile.jvpm)               doc.medicoJvpm = profile.jvpm;
+      if (paciente.camaActual)        doc.camaPaciente = paciente.camaActual;
+      if (form.recomendaciones.trim()) doc.recomendaciones = form.recomendaciones.trim();
+      if (form.seguimiento.trim())     doc.seguimiento = form.seguimiento.trim();
 
       await addDoc(collection(db, "incapacidades"), doc);
       router.push("/medico/incapacidades");
@@ -210,111 +205,7 @@ export default function NuevaIncapacidadPage() {
       </section>
 
       {/* Paso 2: Datos de incapacidad */}
-      {paciente && (
-        <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-4">
-          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 font-heading">
-            2. Datos de la incapacidad
-          </h3>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div>
-              <label className={labelCls}>Fecha de alta *</label>
-              <input
-                type="date"
-                value={fechaAlta}
-                onChange={(e) => {
-                  setFechaAlta(e.target.value);
-                  if (!fechaDesde || fechaDesde === hoy) setFechaDesde(e.target.value);
-                }}
-                className={inputCls}
-              />
-            </div>
-            <div>
-              <label className={labelCls}>Días de incapacidad *</label>
-              <input
-                type="number"
-                min="1"
-                max="365"
-                value={diasIncapacidad}
-                onChange={(e) => setDiasIncapacidad(e.target.value)}
-                className={inputCls}
-                placeholder="Ej: 7"
-              />
-            </div>
-            <div>
-              <label className={labelCls}>Condición de egreso</label>
-              <select
-                value={condicionEgreso}
-                onChange={(e) => setCondicionEgreso(e.target.value as CondicionEgresoIncapacidad)}
-                className={inputCls}
-              >
-                <option value="vivo">Vivo</option>
-                <option value="muerto">Muerto</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <label className={labelCls}>Desde *</label>
-              <input
-                type="date"
-                value={fechaDesde}
-                onChange={(e) => setFechaDesde(e.target.value)}
-                className={inputCls}
-              />
-            </div>
-            <div>
-              <label className={labelCls}>Hasta (calculado)</label>
-              <input
-                type="text"
-                value={fechaHasta ? formatFechaCorta(fechaHasta) : ""}
-                disabled
-                className={`${inputCls} bg-slate-50 dark:bg-slate-800/50 cursor-not-allowed`}
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className={labelCls}>Diagnóstico de egreso *</label>
-            <textarea
-              value={diagnosticoEgreso}
-              onChange={(e) => setDiagnosticoEgreso(e.target.value)}
-              className={textareaCls}
-              placeholder='Ej: "P1. Bloqueo AV completo resuelto post retiro de marcapasos temporal P2. DM2..."'
-            />
-          </div>
-
-          <div>
-            <label className={labelCls}>Tratamiento al alta *</label>
-            <textarea
-              value={tratamientoAlta}
-              onChange={(e) => setTratamientoAlta(e.target.value)}
-              className={textareaCls}
-              placeholder="Lista de medicamentos, referencias, citas..."
-            />
-          </div>
-
-          <div>
-            <label className={labelCls}>Recomendaciones (opcional)</label>
-            <textarea
-              value={recomendaciones}
-              onChange={(e) => setRecomendaciones(e.target.value)}
-              className={textareaCls}
-            />
-          </div>
-
-          <div>
-            <label className={labelCls}>Seguimiento (opcional)</label>
-            <textarea
-              value={seguimiento}
-              onChange={(e) => setSeguimiento(e.target.value)}
-              className={textareaCls}
-              placeholder="Establecimiento, Monitoreo telefónico, Otros..."
-            />
-          </div>
-        </section>
-      )}
+      {paciente && <IncapacidadFormFields value={form} onChange={setForm} />}
 
       {/* Footer */}
       {paciente && (

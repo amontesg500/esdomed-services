@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { LayoutDashboard, ArrowRightLeft, HeartPulse, Printer, Users, Inbox } from "lucide-react";
+import { LayoutDashboard, ArrowRightLeft, HeartPulse, Printer, Users, Inbox, BedDouble } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Sidebar } from "@/components/Sidebar";
 
@@ -20,11 +20,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   : profile?.role === "admin" ? "Administración"
                   : "ESDOMED";
 
+  const verPacientes = profile?.role === "esdomed" || profile?.role === "admin";
+
   const navItems = [
     { href: "/dashboard",             label: "Inicio",       icon: LayoutDashboard, exact: true },
     { href: "/dashboard/traslados",   label: "Traslados",    icon: ArrowRightLeft },
     { href: "/dashboard/fallecidos",  label: "Fallecidos",   icon: HeartPulse },
     { href: "/dashboard/impresiones", label: "Impresiones",  icon: Printer },
+    ...(verPacientes
+      ? [{ href: "/dashboard/pacientes", label: "Pacientes", icon: BedDouble }]
+      : []),
     { href: "/dashboard/usuarios",    label: "Usuarios",     icon: Users },
     ...(profile?.role === "trabajo_social"
       ? [{ href: "/dashboard/recepciones", label: "Recepciones", icon: Inbox }]

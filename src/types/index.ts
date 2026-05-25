@@ -97,14 +97,127 @@ export interface SolicitudImpresion {
   pacienteExpediente?: string;
   descripcion: string;
   copias: number;
-  
+
   pdfUrl?: string; // Legacy
   pdfNombre?: string; // Legacy
   archivos?: { url: string; nombre: string }[];
-  
+
   estado: EstadoImpresion;
   creadoEn: Date;
   impresoPor?: string;
   impresoPorNombre?: string;
   impresoEn?: Date;
+}
+
+// ============================================================================
+// Pacientes — gestión de pacientes hospitalizados
+// ============================================================================
+
+export type EstadoPaciente =
+  | "activo"            // hospitalizado actualmente
+  | "alta_vivo"         // egreso vivo a domicilio o referido
+  | "alta_fallecido"    // egreso por defunción
+  | "alta_voluntaria"
+  | "fuga"
+  | "in_extremis"       // egreso a domicilio a solicitud familiar/paciente
+  | "referido";         // referido a otro hospital
+
+export type CircunstanciaIngreso = "demanda_espontanea" | "emergencia" | "referido";
+export type Genero = "masculino" | "femenino" | "otro";
+export type AreaGeografica = "urbana" | "rural";
+
+export interface DiagnosticoCIE {
+  codigo: string;       // ej. "N18.5"
+  descripcion: string;  // ej. "Enfermedad renal cronica etapa 5"
+}
+
+export interface ResponsablePaciente {
+  nombre: string;
+  parentesco?: string;
+  documento?: string;
+  telefono?: string;
+  direccion?: string;
+}
+
+export interface MovimientoPaciente {
+  fecha: Date;
+  servicioOrigen: string;
+  servicioDestino: string;
+  camaOrigen?: string;
+  camaDestino?: string;
+  medicoMovimiento?: string;
+  trasladoId?: string;  // ref a SolicitudTraslado si vino del módulo de traslados
+  registradoPorNombre?: string;
+}
+
+export interface Paciente {
+  id?: string;
+
+  // Identidad
+  expediente: string;       // EXP del CSV — único por año pero puede repetirse entre años
+  apellidos: string;
+  nombres: string;
+  fechaNacimiento?: Date;
+  genero: Genero;
+  estadoFamiliar?: string;
+  dui?: string;
+  numeroAfiliacion?: string;
+  ocupacion?: string;
+  nacionalidad?: string;
+
+  // Domicilio
+  direccion?: string;
+  municipio?: string;
+  departamento?: string;
+  canton?: string;
+  area?: AreaGeografica;
+  telefono?: string;
+  otrosNumeros?: string;
+
+  // Responsable
+  responsable?: ResponsablePaciente;
+
+  // Ingreso
+  establecimientoProcedencia?: string;
+  circunstanciaIngreso?: CircunstanciaIngreso;
+  fechaIngreso: Date;
+  servicioIngreso: string;
+  medicoIngresoNombre?: string;
+  diagnosticoIngreso?: DiagnosticoCIE;
+
+  // Ubicación actual
+  servicioActual: string;
+  camaActual?: string;
+
+  // Movimientos (ruta de traslados)
+  movimientos?: MovimientoPaciente[];
+
+  // Estado vital / egreso
+  estado: EstadoPaciente;
+  fechaEgreso?: Date;
+  diasEstancia?: number;
+  diagnosticoEgreso?: DiagnosticoCIE;
+  diagnosticosComplementarios?: DiagnosticoCIE[];
+  causaExterna?: DiagnosticoCIE;
+  procedimientos?: string[];
+  medicoEgresoNombre?: string;
+  medicoEgresoJvpm?: string;
+
+  // COVID (legado del CSV)
+  fechaPruebaCovid?: Date;
+  estadoVacunaCovid?: string;
+
+  // Estado patológico (legado del CSV)
+  estadoPatologicoI?: string;
+  estadoPatologicoII?: string;
+
+  // Cierre vital — enlace con módulo Fallecidos si aplica
+  fallecidoId?: string;
+
+  // Metadata
+  creadoEn: Date;
+  creadoPor: string;        // uid ESDOMED
+  creadoPorNombre: string;
+  actualizadoEn?: Date;
+  actualizadoPor?: string;
 }

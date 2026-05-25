@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, query, orderBy, onSnapshot, getDocs, doc, updateDoc, Timestamp, where } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot, getDocs, doc, updateDoc, Timestamp, where, limit } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { NotificacionFallecido, UserProfile } from "@/types";
@@ -83,6 +83,12 @@ export default function DashboardFallecidosPage() {
       confirmadoPorNombre: profile.nombre,
       confirmadoEn: Timestamp.now(),
     });
+    // Propagar al módulo Pacientes si el expediente existe y está activo
+    try {
+      await marcarPacienteFallecido(selected);
+    } catch (err) {
+      console.error("Error sincronizando fallecido con paciente:", err);
+    }
     setSaving(false);
   };
 
@@ -789,4 +795,34 @@ function FamiliarInput({ label, value, onChange, placeholder, className = "", di
       />
     </div>
   );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Sincronización con módulo de Pacientes
+// ────────────────────────────────────────────────────────────────────────────
+
+async function marcarPacienteFallecido(n: NotificacionFallecido) {
+  if (!n.pacienteExpediente) return;
+  const q = query(
+    collection(db, "pacientes"),
+    where("expediente", "==", n.pacienteExpediente),
+    where("estado", "==", "activo"),
+    limit(1),
+  );
+  const snap = await getDocs(q);
+  if (snap.empty) return;
+  const pacRef = snap.docs[0].ref;
+  const pacData = snap.docs[0].data();
+  const fechaIngreso = (pacData.fechaIngreso as { toDate?: () => Date })?.toDate?.() ?? new Date();
+  const fechaDefuncion = (n.fechaDefuncion as unknown as { toDate?: () => Date })?.toDate?.()
+    ?? (n.fechaDefuncion instanceof Date ? n.fechaDefuncion : new Date());
+  const dias = Math.max(0, Math.floor((fechaDefuncion.getTime() - fechaIngreso.getTime()) / (1000 * 60 * 60 * 24)));
+
+  await updateDoc(pacRef, {
+    estado: "alta_fallecido",
+    fechaEgreso: Timestamp.fromDate(fechaDefuncion),
+    diasEstancia: dias,
+    fallecidoId: n.id,
+    actualizadoEn: Timestamp.now(),
+  });
 }

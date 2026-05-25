@@ -1,10 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, query, orderBy, onSnapshot, doc, updateDoc, Timestamp } from "firebase/firestore";
+import {
+  collection, query, orderBy, onSnapshot, doc, updateDoc, Timestamp,
+  where, getDocs, limit, arrayUnion,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import { SolicitudTraslado, EstadoTraslado } from "@/types";
+import { SolicitudTraslado, EstadoTraslado, Paciente, MovimientoPaciente } from "@/types";
 import { Badge } from "@/components/ui/Badge";
 import { ArrowRightLeft, Clock, X, Building2, RefreshCw } from "lucide-react";
 
@@ -41,6 +44,15 @@ export default function DashboardTrasladosPage() {
       revisadoPor: profile.uid, revisadoPorNombre: profile.nombre,
       actualizadoEn: Timestamp.now(),
     });
+    // Si se aprueba, propagar el movimiento al/los paciente(s) si existen en la BD
+    if (estado === "aprobado") {
+      try {
+        await aplicarTrasladoAPaciente(selected, profile.nombre);
+      } catch (err) {
+        // No bloqueamos la aprobación del traslado si la sincronización falla
+        console.error("Error sincronizando traslado con paciente:", err);
+      }
+    }
     setSaving(false); setSelected(null); setNotas("");
   };
 
@@ -207,4 +219,98 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
       <span className="text-slate-800 dark:text-slate-200 font-medium text-sm flex-1">{value}</span>
     </div>
   );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Sincronización con módulo de Pacientes
+// ────────────────────────────────────────────────────────────────────────────
+// Cuando un traslado se aprueba, buscamos el/los paciente(s) activos por
+// expediente y actualizamos servicio/cama + ruta de movimientos. Si no existe
+// en la BD de pacientes, se ignora silenciosamente (el módulo es opcional).
+
+async function buscarPacienteActivoPorExpediente(exp: string) {
+  const q = query(
+    collection(db, "pacientes"),
+    where("expediente", "==", exp),
+    where("estado", "==", "activo"),
+    limit(1),
+  );
+  const snap = await getDocs(q);
+  if (snap.empty) return null;
+  const d = snap.docs[0];
+  return { id: d.id, data: d.data() as Paciente };
+}
+
+async function aplicarTrasladoAPaciente(t: SolicitudTraslado, registradoPor: string) {
+  const ahora = Timestamp.now();
+
+  if (t.tipoTraslado === "intercambio") {
+    if (!t.pacienteBExpediente) return;
+    const [pacA, pacB] = await Promise.all([
+      buscarPacienteActivoPorExpediente(t.pacienteExpediente),
+      buscarPacienteActivoPorExpediente(t.pacienteBExpediente),
+    ]);
+
+    // En intercambio: A pasa a la cama y servicio que tenía B; B pasa a la cama y servicio que tenía A.
+    if (pacA) {
+      const movA: MovimientoPaciente = {
+        fecha: new Date(),
+        servicioOrigen: t.servicioOrigen,
+        servicioDestino: t.servicioDestino ?? t.servicioOrigen,
+        camaOrigen: t.camaOrigen,
+        camaDestino: t.camaDestino,
+        trasladoId: t.id,
+        registradoPorNombre: registradoPor,
+      };
+      await updateDoc(doc(db, "pacientes", pacA.id), {
+        servicioActual: t.servicioDestino ?? t.servicioOrigen,
+        camaActual: t.camaDestino,
+        movimientos: arrayUnion({ ...movA, fecha: ahora }),
+        actualizadoEn: ahora,
+      });
+    }
+    if (pacB) {
+      const movB: MovimientoPaciente = {
+        fecha: new Date(),
+        servicioOrigen: t.servicioDestino ?? t.servicioOrigen,
+        servicioDestino: t.servicioOrigen,
+        camaOrigen: t.camaDestino,
+        camaDestino: t.camaOrigen,
+        trasladoId: t.id,
+        registradoPorNombre: registradoPor,
+      };
+      await updateDoc(doc(db, "pacientes", pacB.id), {
+        servicioActual: t.servicioOrigen,
+        camaActual: t.camaOrigen,
+        movimientos: arrayUnion({ ...movB, fecha: ahora }),
+        actualizadoEn: ahora,
+      });
+    }
+    return;
+  }
+
+  // Traslado simple (interno o servicio_cama)
+  const paciente = await buscarPacienteActivoPorExpediente(t.pacienteExpediente);
+  if (!paciente) return;
+
+  const servicioDestino = t.tipoTraslado === "interno"
+    ? t.servicioOrigen
+    : (t.servicioDestino ?? t.servicioOrigen);
+
+  const mov: MovimientoPaciente = {
+    fecha: new Date(),
+    servicioOrigen: t.servicioOrigen,
+    servicioDestino,
+    camaOrigen: t.camaOrigen,
+    camaDestino: t.camaDestino,
+    trasladoId: t.id,
+    registradoPorNombre: registradoPor,
+  };
+
+  await updateDoc(doc(db, "pacientes", paciente.id), {
+    servicioActual: servicioDestino,
+    camaActual: t.camaDestino,
+    movimientos: arrayUnion({ ...mov, fecha: ahora }),
+    actualizadoEn: ahora,
+  });
 }

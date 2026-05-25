@@ -110,6 +110,64 @@ export interface SolicitudImpresion {
 }
 
 // ============================================================================
+// Incapacidades — constancias de hospitalización / incapacidad
+// ============================================================================
+
+export type EstadoIncapacidad = "pendiente" | "emitida";
+export type CondicionEgresoIncapacidad = "vivo" | "muerto";
+export type InstitucionProvisional = "CRECER" | "CONFIA" | "INPEP" | "IPSFA" | "ISSS";
+export type BancoDeposito = "Promerica" | "Atlantida";
+
+export interface SolicitudIncapacidad {
+  id?: string;
+
+  // ── Datos del médico solicitante (snapshot al crear) ──
+  medicoId: string;
+  medicoNombre: string;
+  medicoJvpm?: string;       // "Número de Junta" → viene del UserProfile.jvpm
+  medicoServicio: string;
+
+  // ── Paciente (referencia + snapshot al crear) ──
+  pacienteId: string;        // doc id en /pacientes
+  pacienteExpediente: string;
+  pacienteNombre: string;
+
+  // ── Datos del ingreso/cama (snapshot del paciente al crear) ──
+  servicioPaciente: string;
+  camaPaciente?: string;
+
+  // ── Campos que llena el médico ──
+  fechaAlta: Date;
+  diasIncapacidad: number;
+  fechaDesde: Date;          // primer día de incapacidad (default = fechaAlta)
+  fechaHasta: Date;          // se calcula: fechaDesde + (diasIncapacidad - 1) días
+  diagnosticoEgreso: string;
+  tratamientoAlta: string;
+  condicionEgreso: CondicionEgresoIncapacidad;
+  recomendaciones?: string;
+  seguimiento?: string;
+
+  // ── Opcionales (raros) ──
+  correoElectronico?: string;
+  nombrePatrono?: string;
+  pasaporte?: string;
+  partidaNacimiento?: string;
+  otroDocumento?: string;
+
+  // ── Estado y emisión ──
+  estado: EstadoIncapacidad;
+  creadoEn: Date;
+
+  // ── Llenado por ESDOMED al emitir ──
+  institucionProvisional?: InstitucionProvisional;
+  bancoDeposito?: BancoDeposito;
+  emitidaPor?: string;        // uid ESDOMED
+  emitidaPorNombre?: string;
+  emitidaEn?: Date;
+  fechaExpedicion?: Date;     // = emitidaEn pero como fecha solo (para el PDF)
+}
+
+// ============================================================================
 // Pacientes — gestión de pacientes hospitalizados
 // ============================================================================
 

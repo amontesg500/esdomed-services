@@ -2,15 +2,16 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { LayoutDashboard, ArrowRightLeft, HeartPulse, Printer } from "lucide-react";
+import { LayoutDashboard, ArrowRightLeft, HeartPulse, Printer, FileText } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Sidebar } from "@/components/Sidebar";
 
 const navItems = [
-  { href: "/medico",             label: "Inicio",      icon: LayoutDashboard, exact: true },
-  { href: "/medico/traslados",   label: "Traslados",   icon: ArrowRightLeft },
-  { href: "/medico/fallecidos",  label: "Fallecidos",  icon: HeartPulse },
-  { href: "/medico/impresiones", label: "Impresiones", icon: Printer },
+  { href: "/medico",                label: "Inicio",        icon: LayoutDashboard, exact: true },
+  { href: "/medico/traslados",      label: "Traslados",     icon: ArrowRightLeft },
+  { href: "/medico/fallecidos",     label: "Fallecidos",    icon: HeartPulse },
+  { href: "/medico/impresiones",    label: "Impresiones",   icon: Printer },
+  { href: "/medico/incapacidades",  label: "Incapacidades", icon: FileText },
 ];
 
 export default function MedicoLayout({ children }: { children: React.ReactNode }) {

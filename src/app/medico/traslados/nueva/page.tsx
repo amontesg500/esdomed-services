@@ -46,6 +46,9 @@ export default function NuevaTrasladoPage() {
       if (tipoTraslado === "intercambio") return form.pacienteExpediente && form.pacienteBExpediente;
       return form.pacienteExpediente;
     }
+    if (step === 4) {
+      return form.motivoTraslado.trim().length > 0;
+    }
     return false;
   };
 

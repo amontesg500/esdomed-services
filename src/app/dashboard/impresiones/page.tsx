@@ -65,36 +65,63 @@ export default function DashboardImpresionesPage() {
         ))}
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         {filtered.length === 0 && (
           <p className="text-sm text-slate-500 py-10 text-center">Sin solicitudes en este filtro.</p>
         )}
         {filtered.map(s => (
-          <div key={s.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 hover:border-violet-300 dark:hover:border-violet-900 transition-all">
-            <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <p className="font-medium text-slate-900 dark:text-slate-100 text-sm truncate">{s.descripcion}</p>
+          <div key={s.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 hover:border-violet-300 dark:hover:border-violet-900 transition-all shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-5">
+              
+              {/* Información principal */}
+              <div className="min-w-0 flex-1 space-y-2">
+                <div className="flex items-center gap-2 flex-wrap mb-1">
+                  <p className="font-semibold text-slate-900 dark:text-slate-100 text-[15px] truncate">{s.descripcion}</p>
                   <Badge estado={s.estado} />
                 </div>
-                <p className="text-xs text-slate-500 mt-1">Dr. {s.medicoNombre} · {s.medicoServicio} · {s.copias} copia(s)</p>
-                <p className="text-xs text-slate-500 mt-0.5">{formatFecha(s.creadoEn)}</p>
+                
+                {s.pacienteExpediente && (
+                  <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Exp. {s.pacienteExpediente}</p>
+                )}
+                
+                <div className="text-sm text-slate-500 space-y-0.5">
+                  <p>Dr. {s.medicoNombre} · {s.medicoServicio}</p>
+                  <p>{s.copias} copia(s) · Solicitado {formatFecha(s.creadoEn)}</p>
+                </div>
+                
                 {s.estado === "impreso" && s.impresoPorNombre && (
-                  <p className="text-xs text-green-600 dark:text-green-500 mt-1">Impreso por {s.impresoPorNombre}</p>
+                  <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-md border border-green-200 dark:border-green-800">
+                    <p className="text-[11px] font-medium">Impreso por {s.impresoPorNombre} el {formatFecha(s.impresoEn)}</p>
+                  </div>
                 )}
               </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <a href={s.pdfUrl} target="_blank" rel="noopener noreferrer"
-                  className="px-3 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors">
-                  Ver PDF
-                </a>
+              
+              {/* Archivos y Acciones */}
+              <div className="flex flex-col gap-3 shrink-0 w-full sm:w-auto items-end">
+                <div className="w-full flex flex-col gap-1.5">
+                  {s.archivos && s.archivos.length > 0 ? (
+                    s.archivos.map((archivo, idx) => (
+                      <a key={idx} href={archivo.url} target="_blank" rel="noopener noreferrer"
+                        className="block px-3 py-1.5 text-xs font-medium text-center text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors truncate max-w-full sm:max-w-[200px]" title={archivo.nombre}>
+                        {archivo.nombre}
+                      </a>
+                    ))
+                  ) : s.pdfUrl ? (
+                    <a href={s.pdfUrl} target="_blank" rel="noopener noreferrer"
+                      className="block px-3 py-1.5 text-xs font-medium text-center text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors truncate max-w-full sm:max-w-[200px]" title={s.pdfNombre}>
+                      {s.pdfNombre || "Ver Documento"}
+                    </a>
+                  ) : null}
+                </div>
+
                 {s.estado === "pendiente" && (
                   <button onClick={() => marcarImpreso(s.id!)} disabled={saving === s.id}
-                    className="px-3 py-1.5 text-xs font-medium text-white bg-green-700 rounded-lg hover:bg-green-600 disabled:opacity-50 transition-colors">
-                    {saving === s.id ? "..." : "Marcar impreso"}
+                    className="w-full px-4 py-2 text-xs font-semibold text-white bg-green-700 rounded-lg hover:bg-green-600 disabled:opacity-50 transition-colors mt-1 shadow-sm">
+                    {saving === s.id ? "Procesando..." : "Marcar como impreso"}
                   </button>
                 )}
               </div>
+
             </div>
           </div>
         ))}

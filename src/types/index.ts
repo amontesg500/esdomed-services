@@ -94,10 +94,14 @@ export interface SolicitudImpresion {
   medicoId: string;
   medicoNombre: string;
   medicoServicio: string;
+  pacienteExpediente?: string;
   descripcion: string;
   copias: number;
-  pdfUrl: string;
-  pdfNombre: string;
+  
+  pdfUrl?: string; // Legacy
+  pdfNombre?: string; // Legacy
+  archivos?: { url: string; nombre: string }[];
+  
   estado: EstadoImpresion;
   creadoEn: Date;
   impresoPor?: string;

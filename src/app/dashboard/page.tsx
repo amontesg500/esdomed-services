@@ -6,7 +6,7 @@ import { collection, query, orderBy, onSnapshot, limit } from "firebase/firestor
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { SolicitudTraslado, NotificacionFallecido, SolicitudImpresion } from "@/types";
-import { ArrowRightLeft, HeartPulse, Printer, ChevronRight, Clock, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+import { ArrowRightLeft, HeartPulse, Printer, ChevronRight, ChevronLeft, Clock, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 
 type RecentItem = {
   id: string;
@@ -57,11 +57,12 @@ export default function DashboardPage() {
   const [traslados, setTraslados] = useState<SolicitudTraslado[]>([]);
   const [fallecidos, setFallecidos] = useState<NotificacionFallecido[]>([]);
   const [impresiones, setImpresiones] = useState<SolicitudImpresion[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
-    const q1 = query(collection(db, "traslados"), orderBy("creadoEn", "desc"), limit(10));
-    const q2 = query(collection(db, "notificaciones_fallecidos"), orderBy("creadoEn", "desc"), limit(10));
-    const q3 = query(collection(db, "solicitudes_impresion"), orderBy("creadoEn", "desc"), limit(10));
+    const q1 = query(collection(db, "traslados"), orderBy("creadoEn", "desc"), limit(50));
+    const q2 = query(collection(db, "notificaciones_fallecidos"), orderBy("creadoEn", "desc"), limit(50));
+    const q3 = query(collection(db, "solicitudes_impresion"), orderBy("creadoEn", "desc"), limit(50));
     const u1 = onSnapshot(q1, s => setTraslados(s.docs.map(d => ({ id: d.id, ...d.data() } as SolicitudTraslado))));
     const u2 = onSnapshot(q2, s => setFallecidos(s.docs.map(d => ({ id: d.id, ...d.data() } as NotificacionFallecido))));
     const u3 = onSnapshot(q3, s => setImpresiones(s.docs.map(d => ({ id: d.id, ...d.data() } as SolicitudImpresion))));
@@ -73,7 +74,7 @@ export default function DashboardPage() {
   const pendImpresiones = impresiones.filter(i => i.estado === "pendiente").length;
   const totalPendientes = pendTraslados + pendFallecidos + pendImpresiones;
 
-  const recent: RecentItem[] = [
+  const allRecent: RecentItem[] = [
     ...traslados.map(t => ({
       id: t.id!, tipo: "traslado" as const,
       titulo: t.pacienteNombre || `Exp. ${t.pacienteExpediente}`, 
@@ -90,13 +91,22 @@ export default function DashboardPage() {
       titulo: i.descripcion, subtitulo: `${i.copias} copia(s)`,
       medico: i.medicoNombre, estado: i.estado, ts: i.creadoEn,
     })),
-  ]
-    .sort((a, b) => {
-      const at = (a.ts as { toDate?: () => Date }).toDate?.()?.getTime() ?? 0;
-      const bt = (b.ts as { toDate?: () => Date }).toDate?.()?.getTime() ?? 0;
-      return bt - at;
-    })
-    .slice(0, 8);
+  ].sort((a, b) => {
+    const at = (a.ts as { toDate?: () => Date }).toDate?.()?.getTime() ?? 0;
+    const bt = (b.ts as { toDate?: () => Date }).toDate?.()?.getTime() ?? 0;
+    return bt - at;
+  });
+
+  const ITEMS_PER_PAGE = 8;
+  const totalPages = Math.ceil(allRecent.length / ITEMS_PER_PAGE) || 1;
+  const currentRecent = allRecent.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+  // Auto-correct page if items change and current page is out of bounds
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [allRecent.length, currentPage, totalPages]);
 
   const stats = [
     { tipo: "traslado" as const,  pendientes: pendTraslados,   total: traslados.length },
@@ -159,42 +169,71 @@ export default function DashboardPage() {
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800">
           <h2 className="font-semibold text-slate-800 dark:text-slate-100 font-heading">Actividad reciente</h2>
-          <span className="text-xs text-slate-500">{recent.length} registros</span>
+          <span className="text-xs text-slate-500">{allRecent.length} registros</span>
         </div>
 
-        {recent.length === 0 ? (
+        {allRecent.length === 0 ? (
           <div className="py-12 text-center">
             <p className="text-slate-500 text-sm">Sin actividad registrada aún.</p>
           </div>
         ) : (
-          <ul className="divide-y divide-slate-100 dark:divide-slate-800">
-            {recent.map((item) => {
-              const mod = MODULE_CONFIG[item.tipo];
-              const est = ESTADO_CONFIG[item.estado] ?? ESTADO_CONFIG["pendiente"];
-              const EstIcon = est.icon;
-              return (
-                <li key={`${item.tipo}-${item.id}`} className="flex items-start gap-3 px-5 py-3.5 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
-                  <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${mod.dot}`} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className={`text-[11px] font-semibold uppercase tracking-wide ${mod.color}`}>{mod.label}</span>
-                      <span className="text-slate-300 dark:text-slate-700">·</span>
-                      <span className="text-xs text-slate-500 truncate">Dr. {item.medico}</span>
+          <>
+            <ul className="divide-y divide-slate-100 dark:divide-slate-800">
+              {currentRecent.map((item) => {
+                const mod = MODULE_CONFIG[item.tipo];
+                const est = ESTADO_CONFIG[item.estado] ?? ESTADO_CONFIG["pendiente"];
+                const EstIcon = est.icon;
+                return (
+                  <li key={`${item.tipo}-${item.id}`} className="flex items-start gap-3 px-5 py-3.5 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
+                    <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${mod.dot}`} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className={`text-[11px] font-semibold uppercase tracking-wide ${mod.color}`}>{mod.label}</span>
+                        <span className="text-slate-300 dark:text-slate-700">·</span>
+                        <span className="text-xs text-slate-500 truncate">Dr. {item.medico}</span>
+                      </div>
+                      <p className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate mt-0.5">{item.titulo}</p>
+                      <p className="text-xs text-slate-500 truncate">{item.subtitulo}</p>
                     </div>
-                    <p className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate mt-0.5">{item.titulo}</p>
-                    <p className="text-xs text-slate-500 truncate">{item.subtitulo}</p>
-                  </div>
-                  <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                    <div className={`flex items-center gap-1 text-xs font-medium ${est.color}`}>
-                      <EstIcon size={11} />
-                      <span className="hidden sm:inline">{est.label}</span>
+                    <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                      <div className={`flex items-center gap-1 text-xs font-medium ${est.color}`}>
+                        <EstIcon size={11} />
+                        <span className="hidden sm:inline">{est.label}</span>
+                      </div>
+                      <span className="text-[11px] text-slate-500">{timeAgo(item.ts)}</span>
                     </div>
-                    <span className="text-[11px] text-slate-500">{timeAgo(item.ts)}</span>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+                  </li>
+                );
+              })}
+            </ul>
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+                <span className="text-xs text-slate-500">
+                  Mostrando {(currentPage - 1) * ITEMS_PER_PAGE + 1} a {Math.min(currentPage * ITEMS_PER_PAGE, allRecent.length)} de {allRecent.length}
+                </span>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronLeft size={16} className="text-slate-600 dark:text-slate-400" />
+                  </button>
+                  <span className="text-xs font-medium text-slate-700 dark:text-slate-300 px-2">
+                    Página {currentPage} de {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronRight size={16} className="text-slate-600 dark:text-slate-400" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

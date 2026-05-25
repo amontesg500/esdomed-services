@@ -9,7 +9,7 @@ import {
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import {
-  ArrowLeft, Search, AlertTriangle, Save, CheckCircle2, User2, Info,
+  ArrowLeft, Search, AlertTriangle, Save, CheckCircle2, User2,
 } from "lucide-react";
 import type { CondicionEgresoIncapacidad, Paciente } from "@/types";
 import {
@@ -153,20 +153,6 @@ export default function NuevaIncapacidadPage() {
           Nueva incapacidad
         </h1>
       </div>
-
-      {/* Aviso JVPM faltante */}
-      {!profile?.jvpm && (
-        <div className="flex items-start gap-2 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-900 rounded-xl px-4 py-3 text-sm">
-          <Info size={15} className="text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
-          <div>
-            <p className="text-amber-700 dark:text-amber-400 font-semibold">Tu número de JVPM no está registrado</p>
-            <p className="text-xs text-amber-600 dark:text-amber-500 mt-0.5">
-              Podés crear la solicitud igual, pero la constancia saldrá sin número de junta.
-              Pedile a ESDOMED que cargue tu JVPM en tu perfil.
-            </p>
-          </div>
-        </div>
-      )}
 
       {/* Paso 1: Buscar paciente */}
       <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5">

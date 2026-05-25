@@ -44,12 +44,12 @@ export function ConstanciaPrintLayout({ incapacidad, paciente }: Props) {
 
       <table className="constancia-table w-full border-collapse text-[10px]">
         <tbody>
-          {/* Nombre + Número de junta */}
+          {/* Nombre + Expediente del paciente */}
           <tr>
             <td className="label w-[140px]"><strong>Nombre:</strong></td>
             <td colSpan={4} className="value text-[11px]">{paciente.apellidos} {paciente.nombres}</td>
             <td className="value text-right font-bold text-[11px] w-[110px]">
-              {incapacidad.medicoJvpm ?? ""}
+              {paciente.expediente}
             </td>
           </tr>
           {/* Separador */}

@@ -8,6 +8,21 @@
   --font-body: var(--font-sans);
 }
 
+/* Override slate colors in dark mode to make it more elegant (zinc-like) and with less contrast */
+.dark {
+  --color-slate-950: #0a0a0a; /* neutral-950 */
+  --color-slate-900: #171717; /* neutral-900 */
+  --color-slate-800: #262626; /* neutral-800 */
+  --color-slate-700: #404040; /* neutral-700 */
+  --color-slate-600: #525252; /* neutral-600 */
+  --color-slate-500: #737373; /* neutral-500 */
+  --color-slate-400: #8b8b8b; /* custom text-muted */
+  --color-slate-300: #a3a3a3; /* neutral-400 */
+  --color-slate-200: #a3a3a3; /* neutral-400 */
+  --color-slate-100: #c2c2c2; /* custom low-contrast text */
+  --color-slate-50:  #d4d4d4; /* custom lower-contrast text */
+}
+
 @theme inline {
   --font-sans: var(--font-body);
 }

@@ -20,7 +20,11 @@
       "Bash(git commit *)",
       "Bash(echo \"EXIT_CODE=$?\")",
       "Bash(echo \"EXIT=$?\")",
-      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\Usuario\\\\desktop\\\\esdomed-services\" -Recurse -Directory | Where-Object { $_.Name -eq \"src\" } | Select-Object -First 1)"
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\Usuario\\\\desktop\\\\esdomed-services\" -Recurse -Directory | Where-Object { $_.Name -eq \"src\" } | Select-Object -First 1)",
+      "Bash(Get-ChildItem *)",
+      "Bash(Select-Object Name,Length)",
+      "Bash(Select-Object Name)",
+      "PowerShell(Copy-Item *)"
     ]
   }
 }

@@ -1,0 +1,92 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── Helpers ────────────────────────────────────────────────────────────
+    function isAuth() {
+      return request.auth != null;
+    }
+    function uid() {
+      return request.auth.uid;
+    }
+    function getRole() {
+      return get(/databases/$(database)/documents/usuarios/$(uid())).data.role;
+    }
+    function isEsdomed()      { return isAuth() && getRole() == 'esdomed'; }
+    function isMedico()       { return isAuth() && getRole() == 'medico'; }
+    function isAdmin()        { return isAuth() && getRole() == 'admin'; }
+    function isPsicologia()   { return isAuth() && getRole() == 'psicologia'; }
+    function isTrabajoSocial(){ return isAuth() && getRole() == 'trabajo_social'; }
+    function isStaff() {
+      return isAuth() && getRole() in ['esdomed', 'admin', 'psicologia', 'trabajo_social'];
+    }
+
+    // ─── Usuarios ────────────────────────────────────────────────────────────
+    // Cualquier usuario autenticado puede leer perfiles (necesario para
+    // selects de personal y para que las reglas lean el rol).
+    match /usuarios/{userId} {
+      allow read:   if isAuth();
+      allow create: if isAdmin();
+      allow update: if isAdmin() || (isAuth() && uid() == userId);
+      allow delete: if isAdmin();
+    }
+
+    // ─── Traslados ────────────────────────────────────────────────────────────
+    match /traslados/{id} {
+      allow read:   if isAuth() && (isStaff() || (isMedico() && resource.data.medicoId == uid()));
+      allow create: if isMedico();
+      allow update: if isStaff();
+      allow delete: if isAdmin();
+    }
+
+    // ─── Notificaciones de fallecidos ─────────────────────────────────────────
+    match /notificaciones_fallecidos/{id} {
+      allow read:   if isAuth() && (isStaff() || isPsicologia() || isTrabajoSocial() || (isMedico() && resource.data.medicoId == uid()));
+      allow create: if isMedico();
+      allow update: if isStaff() || isPsicologia() || isTrabajoSocial();
+      allow delete: if isAdmin();
+    }
+
+    // ─── Solicitudes de impresión ─────────────────────────────────────────────
+    match /solicitudes_impresion/{id} {
+      allow read:   if isAuth() && (isStaff() || (isMedico() && resource.data.medicoId == uid()));
+      allow create: if isMedico();
+      allow update: if isEsdomed() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ─── Pacientes ────────────────────────────────────────────────────────────
+    match /pacientes/{id} {
+      allow read:   if isStaff() || isMedico();
+      allow create: if isEsdomed() || isAdmin();
+      allow update: if isEsdomed() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ─── Control de ingresos ──────────────────────────────────────────────────
+    // Los médicos tienen acceso de solo lectura para ver la cola.
+    // Solo el personal ESDOMED puede registrar ingresos.
+    match /control_ingresos/{id} {
+      allow read:   if isAuth();
+      allow create: if isEsdomed();
+      allow update: if isEsdomed() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ─── Incapacidades ────────────────────────────────────────────────────────
+    match /incapacidades/{id} {
+      allow read:   if isAuth() && (isStaff() || (isMedico() && resource.data.medicoId == uid()));
+      allow create: if isMedico();
+      allow update: if isAuth() && (isStaff() || (isMedico() && resource.data.medicoId == uid()));
+      allow delete: if isAdmin();
+    }
+
+    // ─── Recepciones (psicología / trabajo social) ────────────────────────────
+    match /recepciones/{id} {
+      allow read:   if isStaff() || isPsicologia() || isTrabajoSocial();
+      allow create: if isPsicologia() || isTrabajoSocial() || isEsdomed();
+      allow update: if isPsicologia() || isTrabajoSocial() || isEsdomed() || isAdmin();
+      allow delete: if isAdmin();
+    }
+  }
+}

@@ -24,7 +24,8 @@
       "Bash(Get-ChildItem *)",
       "Bash(Select-Object Name,Length)",
       "Bash(Select-Object Name)",
-      "PowerShell(Copy-Item *)"
+      "PowerShell(Copy-Item *)",
+      "Bash(npx firebase-tools *)"
     ]
   }
 }

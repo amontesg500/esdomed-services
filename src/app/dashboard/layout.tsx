@@ -20,11 +20,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   : profile?.role === "admin" ? "Administración"
                   : "ESDOMED";
 
+  const verControlIngresos = profile?.role === "esdomed";
   const verPacientes = profile?.role === "esdomed" || profile?.role === "admin";
   const verIncapacidades = profile?.role === "esdomed" || profile?.role === "admin";
 
   const navItems = [
     { href: "/dashboard",             label: "Inicio",       icon: LayoutDashboard, exact: true },
+    ...(verControlIngresos
+      ? [{ href: "/dashboard/control-ingresos", label: "Control ingresos", icon: FileText }]
+      : []),
     { href: "/dashboard/traslados",   label: "Traslados",    icon: ArrowRightLeft },
     { href: "/dashboard/fallecidos",  label: "Fallecidos",   icon: HeartPulse },
     { href: "/dashboard/impresiones", label: "Impresiones",  icon: Printer },

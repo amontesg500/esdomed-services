@@ -6,7 +6,7 @@ import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { NotificacionFallecido } from "@/types";
 import { Badge } from "@/components/ui/Badge";
-import { HeartPulse, Plus, CheckCircle2, AlertCircle, X } from "lucide-react";
+import { HeartPulse, Plus, CheckCircle2, AlertCircle, X, Search } from "lucide-react";
 import { SERVICIOS_HOSPITALARIOS } from "@/lib/servicios";
 
 const inputCls = "w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition";
@@ -21,6 +21,9 @@ type ModalState = { type: "success"; expediente: string; nombre: string } | { ty
 export default function MedicoFallecidosPage() {
   const { user, profile } = useAuth();
   const [notificaciones, setNotificaciones] = useState<NotificacionFallecido[]>([]);
+  const [busquedaExpediente, setBusquedaExpediente] = useState("");
+  const [fechaDesde, setFechaDesde] = useState("");
+  const [fechaHasta, setFechaHasta] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(EMPTY);
@@ -70,6 +73,16 @@ export default function MedicoFallecidosPage() {
       setSaving(false);
     }
   };
+
+  const displayList = notificaciones.filter(n => {
+    if (busquedaExpediente && !(n.pacienteExpediente?.toLowerCase() ?? "").includes(busquedaExpediente.toLowerCase())) return false;
+    if (fechaDesde || fechaHasta) {
+      const d = ((n.creadoEn as unknown) as { toDate?: () => Date }).toDate?.() ?? n.creadoEn;
+      if (fechaDesde && d < new Date(fechaDesde + "T00:00:00")) return false;
+      if (fechaHasta && d > new Date(fechaHasta + "T23:59:59")) return false;
+    }
+    return true;
+  });
 
   const formatFecha = (ts: unknown) => {
     if (!ts) return "—";
@@ -140,12 +153,38 @@ export default function MedicoFallecidosPage() {
         </form>
       )}
 
+      <div className="flex flex-wrap gap-2 mb-4 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+        <div className="relative flex-1 min-w-[180px]">
+          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          <input type="text" placeholder="Buscar por expediente..." value={busquedaExpediente} onChange={e => setBusquedaExpediente(e.target.value)}
+            className="w-full pl-8 pr-3 py-1.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-slate-100 placeholder-slate-400" />
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-slate-500 shrink-0">Desde</span>
+          <input type="date" value={fechaDesde} onChange={e => setFechaDesde(e.target.value)}
+            className="px-2 py-1.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-slate-100 [color-scheme:light] dark:[color-scheme:dark]" />
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-slate-500 shrink-0">Hasta</span>
+          <input type="date" value={fechaHasta} onChange={e => setFechaHasta(e.target.value)}
+            className="px-2 py-1.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-slate-100 [color-scheme:light] dark:[color-scheme:dark]" />
+        </div>
+        {(busquedaExpediente || fechaDesde || fechaHasta) && (
+          <button onClick={() => { setBusquedaExpediente(""); setFechaDesde(""); setFechaHasta(""); }}
+            className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg transition-colors">
+            <X size={12} /> Limpiar
+          </button>
+        )}
+      </div>
+
       {/* History list */}
       <div className="space-y-2">
-        {notificaciones.length === 0 && !showForm && (
-          <p className="text-sm text-slate-500 py-10 text-center">No has enviado notificaciones de fallecido.</p>
+        {displayList.length === 0 && !showForm && (
+          <p className="text-sm text-slate-500 py-10 text-center">
+            {notificaciones.length === 0 ? "No has enviado notificaciones de fallecido." : "Sin resultados para los filtros aplicados."}
+          </p>
         )}
-        {notificaciones.map(n => (
+        {displayList.map(n => (
           <div key={n.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 hover:border-rose-200 dark:hover:border-rose-900 transition-all">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">

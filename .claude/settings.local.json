@@ -19,7 +19,8 @@
       "Bash(git push *)",
       "Bash(git commit *)",
       "Bash(echo \"EXIT_CODE=$?\")",
-      "Bash(echo \"EXIT=$?\")"
+      "Bash(echo \"EXIT=$?\")",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\Usuario\\\\desktop\\\\esdomed-services\" -Recurse -Directory | Where-Object { $_.Name -eq \"src\" } | Select-Object -First 1)"
     ]
   }
 }

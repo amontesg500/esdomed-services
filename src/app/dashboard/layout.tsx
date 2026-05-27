@@ -20,7 +20,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   : profile?.role === "admin" ? "Administración"
                   : "ESDOMED";
 
-  const verControlIngresos = profile?.role === "esdomed";
+  const verControlIngresos = profile?.role === "esdomed" || profile?.role === "admin";
   const verPacientes = profile?.role === "esdomed" || profile?.role === "admin";
   const verIncapacidades = profile?.role === "esdomed" || profile?.role === "admin";
 

@@ -11,7 +11,7 @@ import type { Paciente, SolicitudIncapacidad } from "@/types";
 import {
   calcularEdad, formatFecha, nombreCompleto, toDate,
 } from "@/lib/pacientes/helpers";
-import { calcularFechaHasta } from "@/lib/incapacidades/helpers";
+import { calcularDiasHospitalizacion, calcularFechaHasta } from "@/lib/incapacidades/helpers";
 import {
   IncapacidadFormFields, type IncapacidadFormValue,
 } from "@/components/incapacidades/IncapacidadFormFields";
@@ -28,8 +28,7 @@ export default function EditarIncapacidadPage({ params }: { params: Promise<{ id
 
   const [form, setForm] = useState<IncapacidadFormValue>({
     fechaAlta: "",
-    diasIncapacidad: "",
-    fechaDesde: "",
+    diasExtras: "",
     diagnosticoEgreso: "",
     tratamientoAlta: "",
     condicionEgreso: "vivo",
@@ -76,10 +75,13 @@ export default function EditarIncapacidadPage({ params }: { params: Promise<{ id
         }
 
         setIncapacidad(inc);
+        // Deriva los días adicionales post-alta del registro existente: fechaHasta - fechaAlta
+        const diasExtrasGuardados = Math.round(
+          (inc.fechaHasta.getTime() - inc.fechaAlta.getTime()) / (1000 * 60 * 60 * 24)
+        );
         setForm({
           fechaAlta: toDateInput(inc.fechaAlta),
-          diasIncapacidad: String(inc.diasIncapacidad),
-          fechaDesde: toDateInput(inc.fechaDesde),
+          diasExtras: String(Math.max(0, diasExtrasGuardados)),
           diagnosticoEgreso: inc.diagnosticoEgreso,
           tratamientoAlta: inc.tratamientoAlta,
           condicionEgreso: inc.condicionEgreso,
@@ -112,8 +114,8 @@ export default function EditarIncapacidadPage({ params }: { params: Promise<{ id
 
   const guardar = async () => {
     if (!incapacidad?.id) return;
-    const dias = parseInt(form.diasIncapacidad, 10);
-    if (!form.diasIncapacidad || dias <= 0) { setError("Los días de incapacidad deben ser mayor a 0."); return; }
+    const diasExtras = parseInt(form.diasExtras, 10);
+    if (form.diasExtras === "" || isNaN(diasExtras) || diasExtras < 0) { setError("Los días adicionales deben ser 0 o mayor."); return; }
     if (!form.diagnosticoEgreso.trim()) { setError("El diagnóstico de egreso es obligatorio."); return; }
     if (!form.tratamientoAlta.trim())   { setError("El tratamiento al alta es obligatorio."); return; }
 
@@ -121,12 +123,16 @@ export default function EditarIncapacidadPage({ params }: { params: Promise<{ id
     setGuardando(true);
     try {
       const fAlta  = new Date(form.fechaAlta);
-      const fDesde = new Date(form.fechaDesde);
-      const fHasta = calcularFechaHasta(fDesde, dias);
+      // Usa fechaIngreso del paciente cargado; si no está disponible, usa la fechaDesde almacenada
+      const fDesde = paciente?.fechaIngreso ?? incapacidad.fechaDesde;
+      if (fAlta < fDesde) { setError("La fecha de alta no puede ser anterior a la fecha de ingreso del paciente."); setGuardando(false); return; }
+      const diasHosp  = calcularDiasHospitalizacion(fDesde, fAlta);
+      const diasTotal = diasHosp + diasExtras;
+      const fHasta    = calcularFechaHasta(fAlta, diasExtras);
 
       const update: Record<string, unknown> = {
         fechaAlta: Timestamp.fromDate(fAlta),
-        diasIncapacidad: dias,
+        diasIncapacidad: diasTotal,
         fechaDesde: Timestamp.fromDate(fDesde),
         fechaHasta: Timestamp.fromDate(fHasta),
         diagnosticoEgreso: form.diagnosticoEgreso.trim(),
@@ -224,7 +230,11 @@ export default function EditarIncapacidadPage({ params }: { params: Promise<{ id
       </section>
 
       {/* Datos editables */}
-      <IncapacidadFormFields value={form} onChange={setForm} />
+      <IncapacidadFormFields
+        value={form}
+        onChange={setForm}
+        fechaIngreso={paciente?.fechaIngreso ?? incapacidad.fechaDesde}
+      />
 
       {/* Footer */}
       <div>

@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  addDoc, collection, getDocs, limit, query, Timestamp, where,
+  addDoc, collection, getDocs, limit, orderBy, query, Timestamp, where,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,7 +15,7 @@ import type { Paciente } from "@/types";
 import {
   calcularEdad, formatFecha, nombreCompleto, toDate,
 } from "@/lib/pacientes/helpers";
-import { calcularFechaHasta } from "@/lib/incapacidades/helpers";
+import { calcularDiasHospitalizacion, calcularFechaHasta } from "@/lib/incapacidades/helpers";
 import {
   IncapacidadFormFields, type IncapacidadFormValue,
 } from "@/components/incapacidades/IncapacidadFormFields";
@@ -37,8 +37,7 @@ export default function NuevaIncapacidadPage() {
   const hoy = toDateInput(new Date());
   const [form, setForm] = useState<IncapacidadFormValue>({
     fechaAlta: hoy,
-    diasIncapacidad: "",
-    fechaDesde: hoy,
+    diasExtras: "",
     diagnosticoEgreso: "",
     tratamientoAlta: "",
     condicionEgreso: "vivo",
@@ -59,6 +58,7 @@ export default function NuevaIncapacidadPage() {
       const q = query(
         collection(db, "pacientes"),
         where("expediente", "==", exp),
+        orderBy("fechaIngreso", "desc"),
         limit(1),
       );
       const snap = await getDocs(q);
@@ -85,17 +85,20 @@ export default function NuevaIncapacidadPage() {
 
   const guardar = async () => {
     if (!user || !profile || !paciente) return;
-    const dias = parseInt(form.diasIncapacidad, 10);
-    if (!form.diasIncapacidad || dias <= 0) { setError("Los días de incapacidad deben ser mayor a 0."); return; }
+    const diasExtras = parseInt(form.diasExtras, 10);
+    if (form.diasExtras === "" || isNaN(diasExtras) || diasExtras < 0) { setError("Los días adicionales deben ser 0 o mayor."); return; }
     if (!form.diagnosticoEgreso.trim()) { setError("El diagnóstico de egreso es obligatorio."); return; }
     if (!form.tratamientoAlta.trim())   { setError("El tratamiento al alta es obligatorio."); return; }
 
     setError(null);
     setGuardando(true);
     try {
-      const fAlta   = new Date(form.fechaAlta);
-      const fDesde  = new Date(form.fechaDesde);
-      const fHasta  = calcularFechaHasta(fDesde, dias);
+      const fAlta  = new Date(form.fechaAlta);
+      const fDesde = paciente!.fechaIngreso;
+      if (fAlta < fDesde) { setError("La fecha de alta no puede ser anterior a la fecha de ingreso del paciente."); setGuardando(false); return; }
+      const diasHosp  = calcularDiasHospitalizacion(fDesde, fAlta);
+      const diasTotal = diasHosp + diasExtras;
+      const fHasta    = calcularFechaHasta(fAlta, diasExtras);
 
       const doc: Record<string, unknown> = {
         // Médico
@@ -109,7 +112,7 @@ export default function NuevaIncapacidadPage() {
         servicioPaciente: paciente.servicioActual,
         // Datos
         fechaAlta: Timestamp.fromDate(fAlta),
-        diasIncapacidad: dias,
+        diasIncapacidad: diasTotal,
         fechaDesde: Timestamp.fromDate(fDesde),
         fechaHasta: Timestamp.fromDate(fHasta),
         diagnosticoEgreso: form.diagnosticoEgreso.trim(),
@@ -205,7 +208,13 @@ export default function NuevaIncapacidadPage() {
       </section>
 
       {/* Paso 2: Datos de incapacidad */}
-      {paciente && <IncapacidadFormFields value={form} onChange={setForm} />}
+      {paciente && (
+        <IncapacidadFormFields
+          value={form}
+          onChange={setForm}
+          fechaIngreso={paciente.fechaIngreso}
+        />
+      )}
 
       {/* Footer */}
       {paciente && (

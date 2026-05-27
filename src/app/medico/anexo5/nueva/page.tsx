@@ -287,6 +287,7 @@ export default function NuevaAnexo5Page() {
             onClick={() => {
               setForm({
                 fecha: hoy,
+                expediente: "",
                 nombrePaciente: "",
                 referidoDe: "",
                 establecimientoReferencia: "",

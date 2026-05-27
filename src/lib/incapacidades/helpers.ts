@@ -1,14 +1,20 @@
 // ── Cálculo de fechas ────────────────────────────────────────────────────────
 
 /**
- * Calcula la fecha de fin de incapacidad.
- * Convención: si la incapacidad empieza el día X por N días, termina el día X + (N - 1).
- * Ej: desde 4/5, 31 días → hasta 3/6. Pero el formato del HNES usa "hasta 4/6" para 31 días,
- * lo que sugiere `hasta = desde + dias` (no -1). Usamos esa convención.
+ * Días de hospitalización contados de forma inclusiva (ingreso + alta ambos cuentan).
+ * Ej: ingreso 1/1, alta 10/1 → 10 días.
  */
-export function calcularFechaHasta(desde: Date, diasIncapacidad: number): Date {
-  const hasta = new Date(desde);
-  hasta.setDate(hasta.getDate() + diasIncapacidad);
+export function calcularDiasHospitalizacion(fechaIngreso: Date, fechaAlta: Date): number {
+  return Math.round((fechaAlta.getTime() - fechaIngreso.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+}
+
+/**
+ * Fecha hasta de la incapacidad = fecha de alta + días adicionales post-alta.
+ * HNES convention: hasta = alta + diasExtras (el día "hasta" incluye ese día completo).
+ */
+export function calcularFechaHasta(fechaAlta: Date, diasExtras: number): Date {
+  const hasta = new Date(fechaAlta);
+  hasta.setDate(hasta.getDate() + diasExtras);
   return hasta;
 }
 

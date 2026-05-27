@@ -68,7 +68,7 @@ service cloud.firestore {
     // Solo el personal ESDOMED puede registrar ingresos.
     match /control_ingresos/{id} {
       allow read:   if isAuth();
-      allow create: if isEsdomed();
+      allow create: if isEsdomed() || isAdmin();
       allow update: if isEsdomed() || isAdmin();
       allow delete: if isAdmin();
     }

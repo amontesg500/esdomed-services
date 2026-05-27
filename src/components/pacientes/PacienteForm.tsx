@@ -3,7 +3,7 @@
 import { ChevronDown, IdCard, MapPin, User2, BedDouble, Stethoscope } from "lucide-react";
 import type { Paciente, ResponsablePaciente, DiagnosticoCIE } from "@/types";
 import { CIRCUNSTANCIA_LABEL, GENERO_LABEL } from "@/lib/pacientes/helpers";
-import { SERVICIOS_HOSPITALARIOS, CAMAS_POR_SERVICIO, type ServicioHospitalario } from "@/lib/servicios";
+import { useServicios } from "@/contexts/ServiciosContext";
 
 const inputCls =
   "w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed";
@@ -28,6 +28,7 @@ interface PacienteFormProps {
 }
 
 export function PacienteForm({ value, onChange, disabled, hideIngreso }: PacienteFormProps) {
+  const { servicios, getCamas } = useServicios();
   const set = <K extends keyof PacienteFormValue>(k: K, v: PacienteFormValue[K]) =>
     onChange({ ...value, [k]: v });
 
@@ -339,7 +340,7 @@ export function PacienteForm({ value, onChange, disabled, hideIngreso }: Pacient
                 className={selectCls}
               >
                 <option value="">— Seleccionar servicio</option>
-                {SERVICIOS_HOSPITALARIOS.map((s) => (
+                {servicios.map((s) => (
                   <option key={s} value={s}>{s}</option>
                 ))}
               </select>
@@ -347,9 +348,7 @@ export function PacienteForm({ value, onChange, disabled, hideIngreso }: Pacient
           </Field>
           <Field label="Cama (actual)">
             {(() => {
-              const camas = value.servicioIngreso
-                ? (CAMAS_POR_SERVICIO[value.servicioIngreso as ServicioHospitalario] ?? [])
-                : [];
+              const camas = value.servicioIngreso ? getCamas(value.servicioIngreso) : [];
               return camas.length > 0 ? (
                 <SelectWrapper>
                   <select

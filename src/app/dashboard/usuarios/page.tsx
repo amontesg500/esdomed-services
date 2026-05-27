@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { UserProfile, UserRole } from "@/types";
 import { Users, ChevronDown, Pencil } from "lucide-react";
-import { SERVICIOS_HOSPITALARIOS } from "@/lib/servicios";
+import { useServicios } from "@/contexts/ServiciosContext";
 
 interface NuevoUsuario { nombre: string; email: string; password: string; userRole: UserRole; servicios: string[]; jvpm: string; }
 const EMPTY_FORM: NuevoUsuario = { nombre: "", email: "", password: "", userRole: "medico", servicios: [], jvpm: "" };
@@ -13,6 +13,7 @@ const inputCls = "w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 
 
 export default function DashboardUsuariosPage() {
   const { user } = useAuth();
+  const { servicios } = useServicios();
   const [usuarios, setUsuarios] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -191,7 +192,7 @@ export default function DashboardUsuariosPage() {
                   </button>
                   {serviciosOpen && (
                     <div className="mt-1 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 max-h-52 overflow-y-auto shadow-lg">
-                      {SERVICIOS_HOSPITALARIOS.map(servicio => (
+                      {servicios.map(servicio => (
                         <label key={servicio}
                           className="flex items-center gap-2.5 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer text-sm text-slate-800 dark:text-slate-200">
                           <input type="checkbox"

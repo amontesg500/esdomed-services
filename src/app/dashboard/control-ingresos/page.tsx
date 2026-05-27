@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { addDoc, collection, Timestamp, query, orderBy, onSnapshot, doc, updateDoc } from "firebase/firestore";
 import Image from "next/image";
 import { db } from "@/lib/firebase";
-import { SERVICIOS_HOSPITALARIOS } from "@/lib/servicios";
+import { useServicios } from "@/contexts/ServiciosContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { ClipboardList, CheckCircle2, Search, X, Pencil } from "lucide-react";
 
@@ -45,6 +45,7 @@ const emptyForm = (): FormState => ({
 export default function ControlIngresosPage() {
   const router = useRouter();
   const { profile } = useAuth();
+  const { servicios } = useServicios();
   const [form, setForm] = useState<FormState>(emptyForm());
   const [guardando, setGuardando] = useState(false);
   const [modalInfo, setModalInfo] = useState<{ tipo: "exito" | "error", mensaje: string } | null>(null);
@@ -311,7 +312,7 @@ export default function ControlIngresosPage() {
                 className={`${inputCls} appearance-none`}
               >
                 <option value="">Seleccione el servicio...</option>
-                {SERVICIOS_HOSPITALARIOS.map(s => (
+                {servicios.map(s => (
                   <option key={s} value={s}>{s}</option>
                 ))}
               </select>

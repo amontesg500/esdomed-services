@@ -6,7 +6,7 @@ import { collection, addDoc, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { ChevronLeft, ArrowRight, ArrowLeft, ArrowRightLeft, RefreshCw, Building2, User, FileText } from "lucide-react";
-import { CAMAS_POR_SERVICIO, SERVICIOS_HOSPITALARIOS, ServicioHospitalario } from "@/lib/servicios";
+import { useServicios } from "@/contexts/ServiciosContext";
 
 const inputCls = "w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition";
 
@@ -383,12 +383,13 @@ function SelectField({ label, value, onChange, required }: {
   onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   required?: boolean;
 }) {
+  const { servicios } = useServicios();
   return (
     <div>
       <label className="block text-xs font-medium text-slate-500 mb-1.5">{label} {required && <span className="text-red-500">*</span>}</label>
       <select value={value} onChange={onChange} className={inputCls}>
         <option value="">Seleccionar...</option>
-        {SERVICIOS_HOSPITALARIOS.map(s => (
+        {servicios.map(s => (
           <option key={s} value={s}>{s}</option>
         ))}
       </select>
@@ -401,7 +402,8 @@ function CamaField({ label, servicio, value, onChange, required }: {
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
   required?: boolean;
 }) {
-  const camas = servicio ? (CAMAS_POR_SERVICIO[servicio as ServicioHospitalario] ?? []) : [];
+  const { getCamas } = useServicios();
+  const camas = servicio ? getCamas(servicio) : [];
   return (
     <div>
       <label className="block text-xs font-medium text-slate-500 mb-1.5">{label} {required && <span className="text-red-500">*</span>}</label>

@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { addDoc, collection, Timestamp, query, orderBy, onSnapshot } from "firebase/firestore";
+import { addDoc, collection, Timestamp, query, orderBy, onSnapshot, doc, updateDoc } from "firebase/firestore";
 import Image from "next/image";
 import { db } from "@/lib/firebase";
 import { SERVICIOS_HOSPITALARIOS } from "@/lib/servicios";
 import { useAuth } from "@/contexts/AuthContext";
-import { ClipboardList, CheckCircle2, Search, X } from "lucide-react";
+import { ClipboardList, CheckCircle2, Search, X, Pencil } from "lucide-react";
 
 type ControlIngreso = {
   id?: string;
@@ -49,14 +49,16 @@ export default function ControlIngresosPage() {
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [exito, setExito] = useState(false);
+  const [exitoMsg, setExitoMsg] = useState("");
   const [ingresos, setIngresos] = useState<ControlIngreso[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState("");
   const [fechaDesde, setFechaDesde] = useState("");
   const [fechaHasta, setFechaHasta] = useState("");
 
   useEffect(() => {
     if (!profile) return;
-    if (profile.role !== "esdomed") router.replace("/dashboard");
+    if (profile.role !== "esdomed" && profile.role !== "admin") router.replace("/dashboard");
   }, [profile, router]);
 
   useEffect(() => {
@@ -66,7 +68,7 @@ export default function ControlIngresosPage() {
     );
   }, []);
 
-  if (!profile || profile.role !== "esdomed") {
+  if (!profile || (profile.role !== "esdomed" && profile.role !== "admin")) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="h-7 w-7 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
@@ -99,23 +101,51 @@ export default function ControlIngresosPage() {
         apellidos: form.apellidos.trim(),
         nombres: form.nombres.trim(),
         servicio: form.servicio,
-        responsableIngresoUid: profile.uid,
-        responsableIngresoNombre: profile.nombre,
         ingresoDirectoServicio: form.ingresoDirectoServicio,
-        creadoPor: profile.uid,
-        creadoPorNombre: profile.nombre,
-        creadoEn: Timestamp.now(),
       };
       if (form.dui.trim()) data.dui = form.dui.trim();
-      await addDoc(collection(db, "control_ingresos"), data);
+
+      if (editingId) {
+        await updateDoc(doc(db, "control_ingresos", editingId), data);
+        setEditingId(null);
+        setExitoMsg("Ingreso actualizado correctamente.");
+      } else {
+        data.responsableIngresoUid = profile.uid;
+        data.responsableIngresoNombre = profile.nombre;
+        data.creadoPor = profile.uid;
+        data.creadoPorNombre = profile.nombre;
+        data.creadoEn = Timestamp.now();
+        await addDoc(collection(db, "control_ingresos"), data);
+        setExitoMsg("Ingreso registrado correctamente.");
+      }
+
       setForm(emptyForm());
       setExito(true);
       setTimeout(() => setExito(false), 3500);
     } catch (err) {
-      setError(`Error al registrar: ${err instanceof Error ? err.message : "desconocido"}`);
+      setError(`Error al ${editingId ? "actualizar" : "registrar"}: ${err instanceof Error ? err.message : "desconocido"}`);
     } finally {
       setGuardando(false);
     }
+  };
+
+  const handleEdit = (ingreso: ControlIngreso) => {
+    setEditingId(ingreso.id!);
+    setForm({
+      expediente: ingreso.expediente || "",
+      dui: ingreso.dui || "",
+      apellidos: ingreso.apellidos || "",
+      nombres: ingreso.nombres || "",
+      servicio: ingreso.servicio || "",
+      ingresoDirectoServicio: ingreso.ingresoDirectoServicio || false,
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setForm(emptyForm());
+    setError(null);
   };
 
   const formatFecha = (ts: unknown) => {
@@ -172,7 +202,9 @@ export default function ControlIngresosPage() {
             className="object-contain rounded-lg flex-shrink-0"
           />
           <div className="min-w-0">
-            <p className="text-sm font-bold text-slate-900 dark:text-slate-100 font-heading">Nuevo ingreso</p>
+            <p className="text-sm font-bold text-slate-900 dark:text-slate-100 font-heading">
+              {editingId ? "Editar ingreso" : "Nuevo ingreso"}
+            </p>
             <p className="text-xs text-slate-500 truncate">Responsable: {profile.nombre}</p>
           </div>
         </div>
@@ -274,25 +306,25 @@ export default function ControlIngresosPage() {
           {exito && (
             <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-900 rounded-lg px-3 py-2">
               <CheckCircle2 size={14} className="flex-shrink-0" />
-              Ingreso registrado correctamente.
+              {exitoMsg}
             </div>
           )}
 
           <div className="flex gap-3 pt-1">
             <button
               type="button"
-              onClick={() => { setForm(emptyForm()); setError(null); }}
+              onClick={editingId ? cancelEdit : () => { setForm(emptyForm()); setError(null); }}
               disabled={guardando}
               className="px-4 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors"
             >
-              Limpiar
+              {editingId ? "Cancelar" : "Limpiar"}
             </button>
             <button
               type="submit"
               disabled={guardando}
               className="flex-1 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded-lg disabled:opacity-50 transition-all active:scale-[0.99]"
             >
-              {guardando ? "Registrando..." : "Registrar ingreso"}
+              {guardando ? (editingId ? "Actualizando..." : "Registrando...") : (editingId ? "Actualizar ingreso" : "Registrar ingreso")}
             </button>
           </div>
         </form>
@@ -373,9 +405,20 @@ export default function ControlIngresosPage() {
                 </p>
                 <p className="text-xs text-slate-500 mt-0.5">{ingreso.servicio}</p>
               </div>
-              <div className="text-right shrink-0">
-                <p className="text-xs text-slate-500">{formatFecha(ingreso.creadoEn)}</p>
-                <p className="text-[11px] text-slate-400 mt-0.5">{ingreso.responsableIngresoNombre}</p>
+              <div className="flex flex-col items-end shrink-0 gap-2">
+                <div className="text-right">
+                  <p className="text-xs text-slate-500">{formatFecha(ingreso.creadoEn)}</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">{ingreso.responsableIngresoNombre}</p>
+                </div>
+                {profile?.role === "admin" && (
+                  <button
+                    onClick={() => handleEdit(ingreso)}
+                    className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-md transition-colors"
+                    title="Editar registro"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                )}
               </div>
             </div>
           ))}

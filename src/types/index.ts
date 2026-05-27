@@ -120,6 +120,8 @@ export interface SolicitudAnexo5 {
   medicoId: string;
   medicoNombre: string;
   
+  expediente?: string; // Solo referencia interna, no aparece en el impreso
+
   fecha: string; // formato YYYY-MM-DD
   nombrePaciente: string;
   referidoDe: string;

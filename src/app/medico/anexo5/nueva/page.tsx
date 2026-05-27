@@ -20,6 +20,7 @@ export default function NuevaAnexo5Page() {
 
   const [form, setForm] = useState({
     fecha: hoy,
+    expediente: "",
     nombrePaciente: "",
     referidoDe: "",
     establecimientoReferencia: "",
@@ -55,7 +56,9 @@ export default function NuevaAnexo5Page() {
       const docData: SolicitudAnexo5 = {
         medicoId: user.uid,
         medicoNombre: profile.nombre,
-        
+
+        ...(form.expediente.trim() && { expediente: form.expediente.trim().toUpperCase() }),
+
         fecha: form.fecha,
         nombrePaciente: form.nombrePaciente.toUpperCase(),
         referidoDe: form.referidoDe.toUpperCase(),
@@ -109,6 +112,7 @@ export default function NuevaAnexo5Page() {
                     onClick={() => {
                       setForm({
                         fecha: hoy,
+                        expediente: "",
                         nombrePaciente: "",
                         referidoDe: "",
                         establecimientoReferencia: "",
@@ -176,6 +180,20 @@ export default function NuevaAnexo5Page() {
               className={inputCls}
               value={form.fecha}
               onChange={(e) => setForm({ ...form, fecha: e.target.value })}
+            />
+          </div>
+
+          <div className="col-span-1 md:col-span-2">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+              Expediente del paciente
+              <span className="ml-1.5 text-xs font-normal text-slate-400">(solo referencia interna — no aparece en el impreso)</span>
+            </label>
+            <input
+              type="text"
+              className={inputCls}
+              value={form.expediente}
+              onChange={(e) => setForm({ ...form, expediente: e.target.value })}
+              placeholder="Ej. 1234567"
             />
           </div>
 

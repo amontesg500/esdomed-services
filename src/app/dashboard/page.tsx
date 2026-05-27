@@ -60,6 +60,7 @@ export default function DashboardPage() {
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
+    if (!profile || profile.role === "medico" || profile.role === "psicologia" || profile.role === "enfermeria") return;
     const q1 = query(collection(db, "traslados"), orderBy("creadoEn", "desc"), limit(50));
     const q2 = query(collection(db, "notificaciones_fallecidos"), orderBy("creadoEn", "desc"), limit(50));
     const q3 = query(collection(db, "solicitudes_impresion"), orderBy("creadoEn", "desc"), limit(50));

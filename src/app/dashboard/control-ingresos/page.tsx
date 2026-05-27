@@ -47,9 +47,7 @@ export default function ControlIngresosPage() {
   const { profile } = useAuth();
   const [form, setForm] = useState<FormState>(emptyForm());
   const [guardando, setGuardando] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [exito, setExito] = useState(false);
-  const [exitoMsg, setExitoMsg] = useState("");
+  const [modalInfo, setModalInfo] = useState<{ tipo: "exito" | "error", mensaje: string } | null>(null);
   const [ingresos, setIngresos] = useState<ControlIngreso[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState("");
@@ -78,11 +76,17 @@ export default function ControlIngresosPage() {
 
   const set =
     (field: string) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-      setForm(prev => ({ ...prev, [field]: e.target.value }));
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+      let val = e.target.value;
+      if (field === "nombres" || field === "apellidos") {
+        val = val.toUpperCase();
+      }
+      setForm(prev => ({ ...prev, [field]: val }));
+    };
 
   const validar = (): string | null => {
     if (!form.expediente.trim()) return "El número de expediente es obligatorio.";
+    if (!/^\d+-\d{2}$/.test(form.expediente.trim())) return "El formato del expediente debe ser X-XX (ej. 1-26).";
     if (!form.apellidos.trim()) return "Los apellidos son obligatorios.";
     if (!form.nombres.trim()) return "Los nombres son obligatorios.";
     if (!form.servicio.trim()) return "Seleccione el servicio.";
@@ -92,9 +96,11 @@ export default function ControlIngresosPage() {
   const registrar = async (e: React.FormEvent) => {
     e.preventDefault();
     const err = validar();
-    if (err) { setError(err); return; }
+    if (err) { 
+      setModalInfo({ tipo: "error", mensaje: err });
+      return; 
+    }
     setGuardando(true);
-    setError(null);
     try {
       const data: Record<string, unknown> = {
         expediente: form.expediente.trim(),
@@ -108,7 +114,7 @@ export default function ControlIngresosPage() {
       if (editingId) {
         await updateDoc(doc(db, "control_ingresos", editingId), data);
         setEditingId(null);
-        setExitoMsg("Ingreso actualizado correctamente.");
+        setModalInfo({ tipo: "exito", mensaje: "Ingreso actualizado correctamente." });
       } else {
         data.responsableIngresoUid = profile.uid;
         data.responsableIngresoNombre = profile.nombre;
@@ -116,14 +122,12 @@ export default function ControlIngresosPage() {
         data.creadoPorNombre = profile.nombre;
         data.creadoEn = Timestamp.now();
         await addDoc(collection(db, "control_ingresos"), data);
-        setExitoMsg("Ingreso registrado correctamente.");
+        setModalInfo({ tipo: "exito", mensaje: "Ingreso registrado correctamente." });
       }
 
       setForm(emptyForm());
-      setExito(true);
-      setTimeout(() => setExito(false), 3500);
     } catch (err) {
-      setError(`Error al ${editingId ? "actualizar" : "registrar"}: ${err instanceof Error ? err.message : "desconocido"}`);
+      setModalInfo({ tipo: "error", mensaje: `Error al ${editingId ? "actualizar" : "registrar"}: ${err instanceof Error ? err.message : "desconocido"}` });
     } finally {
       setGuardando(false);
     }
@@ -145,7 +149,6 @@ export default function ControlIngresosPage() {
   const cancelEdit = () => {
     setEditingId(null);
     setForm(emptyForm());
-    setError(null);
   };
 
   const formatFecha = (ts: unknown) => {
@@ -175,6 +178,36 @@ export default function ControlIngresosPage() {
 
   return (
     <div className="p-4 md:p-6 max-w-3xl mx-auto">
+      {modalInfo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-200">
+            <div className={`p-5 flex items-center justify-center ${modalInfo.tipo === "exito" ? "bg-green-500" : "bg-red-500"}`}>
+              {modalInfo.tipo === "exito" ? (
+                <CheckCircle2 size={48} className="text-white" />
+              ) : (
+                <X size={48} className="text-white" />
+              )}
+            </div>
+            <div className="p-6 text-center space-y-4">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                {modalInfo.tipo === "exito" ? "¡Éxito!" : "Error"}
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                {modalInfo.mensaje}
+              </p>
+              <button
+                type="button"
+                onClick={() => setModalInfo(null)}
+                className={`w-full py-2.5 rounded-lg text-sm font-semibold text-white transition-colors ${
+                  modalInfo.tipo === "exito" ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"
+                }`}
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
@@ -297,23 +330,10 @@ export default function ControlIngresosPage() {
             </span>
           </label>
 
-          {error && (
-            <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-900 rounded-lg px-3 py-2">
-              {error}
-            </p>
-          )}
-
-          {exito && (
-            <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-900 rounded-lg px-3 py-2">
-              <CheckCircle2 size={14} className="flex-shrink-0" />
-              {exitoMsg}
-            </div>
-          )}
-
           <div className="flex gap-3 pt-1">
             <button
               type="button"
-              onClick={editingId ? cancelEdit : () => { setForm(emptyForm()); setError(null); }}
+              onClick={editingId ? cancelEdit : () => setForm(emptyForm())}
               disabled={guardando}
               className="px-4 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors"
             >

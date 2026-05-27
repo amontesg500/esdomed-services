@@ -35,7 +35,11 @@ export default function BandejaAnexo5Page() {
 
   const listToDisplay = (tab === "cola" ? cola : historial).filter(s => {
     const term = busqueda.toLowerCase();
-    return s.nombrePaciente.toLowerCase().includes(term) || s.fecha.includes(term);
+    return (
+      s.nombrePaciente.toLowerCase().includes(term) ||
+      s.fecha.includes(term) ||
+      (s.expediente ?? "").toLowerCase().includes(term)
+    );
   });
 
   const selectedItem = solicitudes.find((s) => s.id === selectedId) || null;
@@ -114,7 +118,7 @@ export default function BandejaAnexo5Page() {
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               <input
                 type="text"
-                placeholder="Buscar por paciente o fecha..."
+                placeholder="Buscar por paciente, expediente o fecha..."
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
                 className="w-full pl-9 pr-3 py-2 text-sm bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-slate-100"
@@ -150,8 +154,11 @@ export default function BandejaAnexo5Page() {
                       <td className="px-4 py-3 whitespace-nowrap text-slate-600 dark:text-slate-400 text-xs">
                         {s.fecha}
                       </td>
-                      <td className="px-4 py-3 text-slate-900 dark:text-slate-200 font-medium">
-                        {s.nombrePaciente}
+                      <td className="px-4 py-3">
+                        <span className="block text-slate-900 dark:text-slate-200 font-medium">{s.nombrePaciente}</span>
+                        {s.expediente && (
+                          <span className="text-[11px] text-slate-400 dark:text-slate-500">Exp. {s.expediente}</span>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -175,6 +182,15 @@ export default function BandejaAnexo5Page() {
                   {selectedItem.estado === "pendiente" ? "Emitir e Imprimir" : "Reimprimir"}
                 </button>
               </div>
+
+              {/* Expediente — solo referencia interna, no aparece en el impreso */}
+              {selectedItem.expediente && (
+                <div className="absolute top-4 left-4 z-10">
+                  <span className="inline-flex items-center gap-1.5 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 text-xs font-semibold px-3 py-1.5 rounded-lg">
+                    Exp. {selectedItem.expediente}
+                  </span>
+                </div>
+              )}
 
               {/* Vista previa simulada de hoja */}
               <div className="flex-1 overflow-y-auto p-8">

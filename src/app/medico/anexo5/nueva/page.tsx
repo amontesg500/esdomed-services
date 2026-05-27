@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { addDoc, collection, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import { ArrowLeft, Save, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Save, AlertTriangle, CheckCircle2, X } from "lucide-react";
 import type { SolicitudAnexo5 } from "@/types";
 
 const inputCls =
@@ -31,7 +31,7 @@ export default function NuevaAnexo5Page() {
   });
 
   const [guardando, setGuardando] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [modalInfo, setModalInfo] = useState<{ tipo: "exito" | "error", mensaje: string } | null>(null);
 
   useEffect(() => {
     if (profile?.nombre && !form.medicoRefiere) {
@@ -43,12 +43,12 @@ export default function NuevaAnexo5Page() {
     if (!user || !profile) return;
     
     // Validaciones
-    if (!form.nombrePaciente.trim()) { setError("El nombre del paciente es obligatorio."); return; }
-    if (!form.referidoDe.trim()) { setError("El campo 'Referido de' es obligatorio."); return; }
-    if (!form.establecimientoReferencia.trim()) { setError("El establecimiento de referencia es obligatorio."); return; }
-    if (!form.especialidad.trim()) { setError("La especialidad es obligatoria."); return; }
+    if (!form.nombrePaciente.trim()) { setModalInfo({ tipo: "error", mensaje: "El nombre del paciente es obligatorio." }); return; }
+    if (!form.referidoDe.trim()) { setModalInfo({ tipo: "error", mensaje: "El campo 'Referido de' es obligatorio." }); return; }
+    if (!form.establecimientoReferencia.trim()) { setModalInfo({ tipo: "error", mensaje: "El establecimiento de referencia es obligatorio." }); return; }
+    if (!form.especialidad.trim()) { setModalInfo({ tipo: "error", mensaje: "La especialidad es obligatoria." }); return; }
 
-    setError(null);
+    setModalInfo(null);
     setGuardando(true);
 
     try {
@@ -71,15 +71,52 @@ export default function NuevaAnexo5Page() {
       };
 
       await addDoc(collection(db, "anexo5"), docData);
-      router.push("/medico");
+      setModalInfo({ tipo: "exito", mensaje: "Referencia de Anexo 5 registrada correctamente." });
     } catch (e) {
-      setError(`Error al guardar: ${e instanceof Error ? e.message : "Desconocido"}`);
+      setModalInfo({ tipo: "error", mensaje: `Error al guardar: ${e instanceof Error ? e.message : "Desconocido"}` });
+    } finally {
       setGuardando(false);
     }
   };
 
   return (
     <div className="p-4 md:p-6 max-w-3xl mx-auto space-y-6">
+      {modalInfo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-200">
+            <div className={`p-5 flex items-center justify-center ${modalInfo.tipo === "exito" ? "bg-green-500" : "bg-red-500"}`}>
+              {modalInfo.tipo === "exito" ? (
+                <CheckCircle2 size={48} className="text-white" />
+              ) : (
+                <X size={48} className="text-white" />
+              )}
+            </div>
+            <div className="p-6 text-center space-y-4">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                {modalInfo.tipo === "exito" ? "¡Éxito!" : "Error"}
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                {modalInfo.mensaje}
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  if (modalInfo.tipo === "exito") {
+                    router.push("/medico");
+                  } else {
+                    setModalInfo(null);
+                  }
+                }}
+                className={`w-full py-2.5 rounded-lg text-sm font-semibold text-white transition-colors ${
+                  modalInfo.tipo === "exito" ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"
+                }`}
+              >
+                {modalInfo.tipo === "exito" ? "Volver al inicio" : "Cerrar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Encabezado */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -199,12 +236,7 @@ export default function NuevaAnexo5Page() {
           </div>
         </div>
 
-        {error && (
-          <div className="mt-6 flex items-start gap-3 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 p-4 rounded-xl text-sm border border-red-200 dark:border-red-900/50">
-            <AlertTriangle size={18} className="shrink-0 mt-0.5" />
-            <p>{error}</p>
-          </div>
-        )}
+        </div>
 
         <div className="mt-8 flex items-center justify-end gap-3 pt-6 border-t border-slate-100 dark:border-slate-800">
           <button
@@ -220,7 +252,7 @@ export default function NuevaAnexo5Page() {
                 establecimientoQueRefiere: "HOSPITAL NACIONAL EL SALVADOR",
                 telefonoEstablecimiento: "7788-5522, 2594-2100, 2594-2139",
               });
-              setError(null);
+              setModalInfo(null);
             }}
             disabled={guardando}
             className="px-5 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors disabled:opacity-50"

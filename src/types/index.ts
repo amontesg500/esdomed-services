@@ -1,4 +1,4 @@
-export type UserRole = "medico" | "esdomed" | "trabajo_social" | "psicologia" | "admin";
+export type UserRole = "medico" | "esdomed" | "trabajo_social" | "psicologia" | "admin" | "enfermeria";
 
 export interface UserProfile {
   uid: string;
@@ -196,6 +196,43 @@ export interface SolicitudIncapacidad {
   emitidaPorNombre?: string;
   emitidaEn?: Date;
   fechaExpedicion?: Date;     // = emitidaEn pero como fecha solo (para el PDF)
+}
+
+// ============================================================================
+// Altas Vivos — notificaciones de egreso de pacientes vivos
+// ============================================================================
+
+export type TipoAltaVivo = "domicilio" | "exigida" | "referido" | "fuga" | "in_extremis";
+export type EstadoNotificacionAlta = "pendiente" | "deposito" | "suspendida" | "procesada";
+
+export interface NotificacionAltaVivo {
+  id?: string;
+
+  notificadoPorId: string;
+  notificadoPorNombre: string;
+  notificadoPorRol: string;
+
+  pacienteId: string;
+  pacienteExpediente: string;
+  pacienteNombre: string;
+  servicio: string;
+  cama: string;
+
+  tipoAlta: TipoAltaVivo;
+  notas?: string;
+
+  estado: EstadoNotificacionAlta;
+  creadoEn: Date;
+
+  // Modificado por TS
+  modificadoPorId?: string;
+  modificadoPorNombre?: string;
+  modificadoEn?: Date;
+
+  // Procesado por ESDOMED
+  procesadoPorId?: string;
+  procesadoPorNombre?: string;
+  procesadoEn?: Date;
 }
 
 // ============================================================================

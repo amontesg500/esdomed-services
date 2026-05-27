@@ -100,6 +100,7 @@ export default function DashboardUsuariosPage() {
     medico: "bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-900",
     psicologia: "bg-teal-50 dark:bg-teal-950 text-teal-600 dark:text-teal-400 border-teal-200 dark:border-teal-900",
     admin: "bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 border-red-200 dark:border-red-900",
+    enfermeria: "bg-cyan-50 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400 border-cyan-200 dark:border-cyan-900",
   };
 
   const roleLabels = {
@@ -108,6 +109,7 @@ export default function DashboardUsuariosPage() {
     medico: "Médico",
     psicologia: "Psicología",
     admin: "Administrador Superusuario",
+    enfermeria: "Enfermería",
   };
 
   const displayServicios = (u: UserProfile) => {
@@ -154,6 +156,7 @@ export default function DashboardUsuariosPage() {
                 <option value="esdomed">Personal ESDOMED</option>
                 <option value="trabajo_social">Trabajo Social</option>
                 <option value="psicologia">Psicología</option>
+                <option value="enfermeria">Enfermería</option>
                 <option value="admin">Administrador Superusuario</option>
               </select>
             </div>

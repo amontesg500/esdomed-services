@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { LayoutDashboard, ArrowRightLeft, HeartPulse, Printer, Users, Inbox, BedDouble, FileText, ClipboardList } from "lucide-react";
+import { LayoutDashboard, ArrowRightLeft, HeartPulse, Printer, Users, Inbox, BedDouble, FileText, ClipboardList, LogIn } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Sidebar } from "@/components/Sidebar";
 
@@ -11,7 +11,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && (!profile || profile.role === "medico" || profile.role === "psicologia")) {
+    if (!loading && (!profile || profile.role === "medico" || profile.role === "psicologia" || profile.role === "enfermeria")) {
       router.replace("/login");
     }
   }, [loading, profile, router]);
@@ -23,6 +23,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const verControlIngresos = profile?.role === "esdomed" || profile?.role === "admin";
   const verPacientes = profile?.role === "esdomed" || profile?.role === "admin";
   const verIncapacidades = profile?.role === "esdomed" || profile?.role === "admin";
+  const verAltasVivos = profile?.role === "esdomed" || profile?.role === "admin" || profile?.role === "trabajo_social";
 
   const navItems = [
     { href: "/dashboard",             label: "Inicio",       icon: LayoutDashboard, exact: true },
@@ -42,6 +43,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       ? [{ href: "/dashboard/pacientes", label: "Pacientes", icon: BedDouble }]
       : []),
     { href: "/dashboard/usuarios",    label: "Usuarios",     icon: Users },
+    ...(verAltasVivos
+      ? [{ href: "/dashboard/altas-vivos", label: "Altas Vivos", icon: LogIn }]
+      : []),
     ...(profile?.role === "trabajo_social"
       ? [{ href: "/dashboard/recepciones", label: "Recepciones", icon: Inbox }]
       : []),

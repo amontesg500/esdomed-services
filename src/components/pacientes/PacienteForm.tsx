@@ -3,6 +3,7 @@
 import { ChevronDown, IdCard, MapPin, User2, BedDouble, Stethoscope } from "lucide-react";
 import type { Paciente, ResponsablePaciente, DiagnosticoCIE } from "@/types";
 import { CIRCUNSTANCIA_LABEL, GENERO_LABEL } from "@/lib/pacientes/helpers";
+import { SERVICIOS_HOSPITALARIOS, CAMAS_POR_SERVICIO, type ServicioHospitalario } from "@/lib/servicios";
 
 const inputCls =
   "w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed";
@@ -328,24 +329,52 @@ export function PacienteForm({ value, onChange, disabled, hideIngreso }: Pacient
           </Field>
 
           <Field label="Servicio de ingreso *" className="col-span-2">
-            <input
-              type="text"
-              value={value.servicioIngreso ?? ""}
-              onChange={(e) => set("servicioIngreso", e.target.value)}
-              disabled={disabled}
-              className={inputCls}
-              placeholder="Emergencia / Medicina Interna / UCI..."
-            />
+            <SelectWrapper>
+              <select
+                value={value.servicioIngreso ?? ""}
+                onChange={(e) =>
+                  onChange({ ...value, servicioIngreso: e.target.value, camaActual: "" })
+                }
+                disabled={disabled}
+                className={selectCls}
+              >
+                <option value="">— Seleccionar servicio</option>
+                {SERVICIOS_HOSPITALARIOS.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </SelectWrapper>
           </Field>
           <Field label="Cama (actual)">
-            <input
-              type="text"
-              value={value.camaActual ?? ""}
-              onChange={(e) => set("camaActual", e.target.value)}
-              disabled={disabled}
-              className={inputCls}
-              placeholder="06 / CR11 / BM10..."
-            />
+            {(() => {
+              const camas = value.servicioIngreso
+                ? (CAMAS_POR_SERVICIO[value.servicioIngreso as ServicioHospitalario] ?? [])
+                : [];
+              return camas.length > 0 ? (
+                <SelectWrapper>
+                  <select
+                    value={value.camaActual ?? ""}
+                    onChange={(e) => set("camaActual", e.target.value)}
+                    disabled={disabled}
+                    className={selectCls}
+                  >
+                    <option value="">— Seleccionar cama</option>
+                    {camas.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </SelectWrapper>
+              ) : (
+                <input
+                  type="text"
+                  value={value.camaActual ?? ""}
+                  onChange={(e) => set("camaActual", e.target.value)}
+                  disabled={disabled || !value.servicioIngreso}
+                  className={inputCls}
+                  placeholder={!value.servicioIngreso ? "Primero selecciona el servicio" : ""}
+                />
+              );
+            })()}
           </Field>
 
           <Field label="Médico que indicó el ingreso" className="col-span-3">

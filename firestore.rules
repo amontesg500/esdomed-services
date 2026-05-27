@@ -17,6 +17,7 @@ service cloud.firestore {
     function isAdmin()        { return isAuth() && getRole() == 'admin'; }
     function isPsicologia()   { return isAuth() && getRole() == 'psicologia'; }
     function isTrabajoSocial(){ return isAuth() && getRole() == 'trabajo_social'; }
+    function isEnfermeria()   { return isAuth() && getRole() == 'enfermeria'; }
     function isStaff() {
       return isAuth() && getRole() in ['esdomed', 'admin', 'psicologia', 'trabajo_social'];
     }
@@ -57,7 +58,7 @@ service cloud.firestore {
 
     // ─── Pacientes ────────────────────────────────────────────────────────────
     match /pacientes/{id} {
-      allow read:   if isStaff() || isMedico();
+      allow read:   if isStaff() || isMedico() || isEnfermeria();
       allow create: if isEsdomed() || isAdmin();
       allow update: if isEsdomed() || isAdmin();
       allow delete: if isAdmin();
@@ -86,6 +87,19 @@ service cloud.firestore {
       allow read:   if isStaff() || isPsicologia() || isTrabajoSocial();
       allow create: if isPsicologia() || isTrabajoSocial() || isEsdomed();
       allow update: if isPsicologia() || isTrabajoSocial() || isEsdomed() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ─── Notificaciones de altas vivos ───────────────────────────────────────
+    match /notificaciones_altas/{id} {
+      // Enfermería, TS y ESDOMED pueden leer todas.
+      allow read:   if isEnfermeria() || isTrabajoSocial() || isEsdomed() || isAdmin();
+      // Enfermería y TS pueden crear.
+      allow create: if isEnfermeria() || isTrabajoSocial();
+      // TS puede editar solo las que siguen pendientes (cambiar tipo, archivar).
+      // ESDOMED puede marcar como procesada (también solo si está pendiente).
+      allow update: if (isTrabajoSocial() || isEsdomed() || isAdmin())
+                    && resource.data.estado == 'pendiente';
       allow delete: if isAdmin();
     }
 

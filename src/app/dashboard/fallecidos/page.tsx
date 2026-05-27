@@ -48,6 +48,7 @@ export default function DashboardFallecidosPage() {
   const [familiarTelefono, setFamiliarTelefono] = useState("");
   const [familiarParentesco, setFamiliarParentesco] = useState("");
   const [savingFamiliar, setSavingFamiliar] = useState(false);
+  const [savedFamiliar, setSavedFamiliar] = useState(false);
   const [fiehPendiente, setFiehPendiente] = useState(false);
 
   useEffect(() => {
@@ -165,6 +166,8 @@ export default function DashboardFallecidosPage() {
       familiarParentesco: familiarParentesco || null,
     });
     setSavingFamiliar(false);
+    setSavedFamiliar(true);
+    setTimeout(() => setSavedFamiliar(false), 3000);
   };
 
   const formatFecha = (ts: unknown) => {
@@ -660,7 +663,7 @@ export default function DashboardFallecidosPage() {
                         <FamiliarInput
                           label="Nombre completo"
                           value={familiarNombre}
-                          onChange={setFamiliarNombre}
+                          onChange={v => setFamiliarNombre(v.toUpperCase())}
                           placeholder="Nombre del familiar"
                           className="col-span-2"
                           disabled={isLocked}
@@ -675,8 +678,8 @@ export default function DashboardFallecidosPage() {
                         <FamiliarInput
                           label="Teléfono"
                           value={familiarTelefono}
-                          onChange={setFamiliarTelefono}
-                          placeholder="0000-0000"
+                          onChange={v => setFamiliarTelefono(v.replace(/\D/g, ""))}
+                          placeholder="Solo números"
                           disabled={isLocked}
                         />
                         <div className="col-span-2">
@@ -700,10 +703,14 @@ export default function DashboardFallecidosPage() {
                       {!isLocked && (
                         <button
                           onClick={guardarFamiliar}
-                          disabled={savingFamiliar}
-                          className="w-full py-2 bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 dark:hover:bg-slate-600 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors"
+                          disabled={savingFamiliar || savedFamiliar}
+                          className={`w-full py-2 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-all ${
+                            savedFamiliar
+                              ? "bg-green-600 hover:bg-green-700 shadow-md shadow-green-500/20"
+                              : "bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 dark:hover:bg-slate-600"
+                          }`}
                         >
-                          {savingFamiliar ? "Guardando..." : "Guardar datos familiar"}
+                          {savingFamiliar ? "Guardando..." : savedFamiliar ? "¡Datos guardados con éxito!" : "Guardar datos familiar"}
                         </button>
                       )}
                       {selectedLive.familiarNombre && (

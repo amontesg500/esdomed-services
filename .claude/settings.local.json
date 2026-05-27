@@ -26,7 +26,9 @@
       "Bash(Select-Object Name)",
       "PowerShell(Copy-Item *)",
       "Bash(npx firebase-tools *)",
-      "PowerShell(New-Item *)"
+      "PowerShell(New-Item *)",
+      "Bash(Select-Object -First 50)",
+      "Bash(xargs grep -l \"pdfjs\\\\|PDF\\\\|pdf\")"
     ]
   }
 }

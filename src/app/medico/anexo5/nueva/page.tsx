@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { addDoc, collection, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import { ArrowLeft, Save, AlertTriangle, CheckCircle2, X } from "lucide-react";
+import { ArrowLeft, Save, AlertTriangle, CheckCircle2 } from "lucide-react";
 import type { SolicitudAnexo5 } from "@/types";
 
 const inputCls =
@@ -83,36 +83,64 @@ export default function NuevaAnexo5Page() {
     <div className="p-4 md:p-6 max-w-3xl mx-auto space-y-6">
       {modalInfo && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-200">
-            <div className={`p-5 flex items-center justify-center ${modalInfo.tipo === "exito" ? "bg-green-500" : "bg-red-500"}`}>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden border border-slate-200 dark:border-slate-800">
+            <div className={`p-6 flex flex-col items-center gap-3 ${modalInfo.tipo === "exito" ? "bg-green-50 dark:bg-green-950" : "bg-red-50 dark:bg-red-950"}`}>
               {modalInfo.tipo === "exito" ? (
-                <CheckCircle2 size={48} className="text-white" />
+                <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
+                  <CheckCircle2 size={36} className="text-green-600 dark:text-green-400" />
+                </div>
               ) : (
-                <X size={48} className="text-white" />
+                <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900 flex items-center justify-center">
+                  <AlertTriangle size={36} className="text-red-600 dark:text-red-400" />
+                </div>
               )}
-            </div>
-            <div className="p-6 text-center space-y-4">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-                {modalInfo.tipo === "exito" ? "¡Éxito!" : "Error"}
+              <h3 className={`text-lg font-bold ${modalInfo.tipo === "exito" ? "text-green-800 dark:text-green-200" : "text-red-800 dark:text-red-200"}`}>
+                {modalInfo.tipo === "exito" ? "Referencia registrada" : "No se pudo guardar"}
               </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400">
+              <p className={`text-sm text-center ${modalInfo.tipo === "exito" ? "text-green-700 dark:text-green-300" : "text-red-700 dark:text-red-300"}`}>
                 {modalInfo.mensaje}
               </p>
-              <button
-                type="button"
-                onClick={() => {
-                  if (modalInfo.tipo === "exito") {
-                    router.push("/medico");
-                  } else {
-                    setModalInfo(null);
-                  }
-                }}
-                className={`w-full py-2.5 rounded-lg text-sm font-semibold text-white transition-colors ${
-                  modalInfo.tipo === "exito" ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"
-                }`}
-              >
-                {modalInfo.tipo === "exito" ? "Volver al inicio" : "Cerrar"}
-              </button>
+            </div>
+            <div className="p-5 space-y-2">
+              {modalInfo.tipo === "exito" ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setForm({
+                        fecha: hoy,
+                        nombrePaciente: "",
+                        referidoDe: "",
+                        establecimientoReferencia: "",
+                        fechaHoraCita: "",
+                        especialidad: "",
+                        medicoRefiere: profile?.nombre || "",
+                        establecimientoQueRefiere: "HOSPITAL NACIONAL EL SALVADOR",
+                        telefonoEstablecimiento: "7788-5522, 2594-2100, 2594-2139",
+                      });
+                      setModalInfo(null);
+                    }}
+                    className="w-full py-2.5 rounded-lg text-sm font-semibold text-white bg-green-600 hover:bg-green-700 transition-colors"
+                  >
+                    Registrar otra referencia
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => router.push("/medico")}
+                    className="w-full py-2.5 rounded-lg text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  >
+                    Volver al inicio
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setModalInfo(null)}
+                  className="w-full py-2.5 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors"
+                >
+                  Entendido
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -234,8 +262,6 @@ export default function NuevaAnexo5Page() {
               onChange={(e) => setForm({ ...form, telefonoEstablecimiento: e.target.value })}
             />
           </div>
-        </div>
-
         </div>
 
         <div className="mt-8 flex items-center justify-end gap-3 pt-6 border-t border-slate-100 dark:border-slate-800">

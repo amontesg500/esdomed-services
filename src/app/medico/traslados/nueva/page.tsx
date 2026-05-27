@@ -6,7 +6,7 @@ import { collection, addDoc, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { ChevronLeft, ArrowRight, ArrowLeft, ArrowRightLeft, RefreshCw, Building2, User, FileText } from "lucide-react";
-import { SERVICIOS_HOSPITALARIOS } from "@/lib/servicios";
+import { CAMAS_POR_SERVICIO, SERVICIOS_HOSPITALARIOS, ServicioHospitalario } from "@/lib/servicios";
 
 const inputCls = "w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition";
 
@@ -30,6 +30,14 @@ export default function NuevaTrasladoPage() {
 
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm(prev => ({ ...prev, [field]: e.target.value }));
+
+  // Al cambiar servicio, resetear la(s) cama(s) asociadas
+  const onServicioOrigen = (e: React.ChangeEvent<HTMLSelectElement>) =>
+    setForm(prev => ({ ...prev, servicioOrigen: e.target.value, camaOrigen: "" }));
+  const onServicioDestinoConReset = (e: React.ChangeEvent<HTMLSelectElement>) =>
+    setForm(prev => ({ ...prev, servicioDestino: e.target.value, camaDestino: "" }));
+  const onServicioInternoReset = (e: React.ChangeEvent<HTMLSelectElement>) =>
+    setForm(prev => ({ ...prev, servicioOrigen: e.target.value, camaOrigen: "", camaDestino: "" }));
 
   const nextStep = () => setStep(s => Math.min(s + 1, 4));
   const prevStep = () => setStep(s => Math.max(s - 1, 1));
@@ -159,15 +167,15 @@ export default function NuevaTrasladoPage() {
               <div className="space-y-5">
                 <Section title="Ubicación Actual (Origen)">
                   <div className="grid grid-cols-2 gap-3">
-                    <SelectField label="Servicio origen" value={form.servicioOrigen} onChange={set("servicioOrigen")} required />
-                    <Field label="Cama origen" value={form.camaOrigen} onChange={set("camaOrigen")} required />
+                    <SelectField label="Servicio origen" value={form.servicioOrigen} onChange={onServicioOrigen} required />
+                    <CamaField label="Cama origen" servicio={form.servicioOrigen} value={form.camaOrigen} onChange={set("camaOrigen")} required />
                   </div>
                 </Section>
                 <div className="h-px bg-slate-200 dark:bg-slate-800" />
                 <Section title="Nueva Ubicación (Destino)">
                   <div className="grid grid-cols-2 gap-3">
-                    <SelectField label="Servicio destino" value={form.servicioDestino} onChange={set("servicioDestino")} required />
-                    <Field label="Cama destino" value={form.camaDestino} onChange={set("camaDestino")} required />
+                    <SelectField label="Servicio destino" value={form.servicioDestino} onChange={onServicioDestinoConReset} required />
+                    <CamaField label="Cama destino" servicio={form.servicioDestino} value={form.camaDestino} onChange={set("camaDestino")} required />
                   </div>
                 </Section>
               </div>
@@ -176,13 +184,13 @@ export default function NuevaTrasladoPage() {
             {tipoTraslado === "interno" && (
               <div className="space-y-5">
                 <Section title="Servicio">
-                  <SelectField label="Servicio actual" value={form.servicioOrigen} onChange={set("servicioOrigen")} required />
+                  <SelectField label="Servicio actual" value={form.servicioOrigen} onChange={onServicioInternoReset} required />
                 </Section>
                 <div className="h-px bg-slate-200 dark:bg-slate-800" />
                 <Section title="Movimiento de Cama">
                   <div className="grid grid-cols-2 gap-3">
-                    <Field label="Cama origen" value={form.camaOrigen} onChange={set("camaOrigen")} required />
-                    <Field label="Cama destino" value={form.camaDestino} onChange={set("camaDestino")} required />
+                    <CamaField label="Cama origen" servicio={form.servicioOrigen} value={form.camaOrigen} onChange={set("camaOrigen")} required />
+                    <CamaField label="Cama destino" servicio={form.servicioOrigen} value={form.camaDestino} onChange={set("camaDestino")} required />
                   </div>
                 </Section>
               </div>
@@ -192,15 +200,15 @@ export default function NuevaTrasladoPage() {
               <div className="space-y-5">
                 <Section title="Ubicación Actual de Paciente A">
                   <div className="grid grid-cols-2 gap-3">
-                    <SelectField label="Servicio" value={form.servicioOrigen} onChange={set("servicioOrigen")} required />
-                    <Field label="Cama" value={form.camaOrigen} onChange={set("camaOrigen")} required />
+                    <SelectField label="Servicio" value={form.servicioOrigen} onChange={onServicioOrigen} required />
+                    <CamaField label="Cama" servicio={form.servicioOrigen} value={form.camaOrigen} onChange={set("camaOrigen")} required />
                   </div>
                 </Section>
                 <div className="h-px bg-slate-200 dark:bg-slate-800" />
                 <Section title="Ubicación Actual de Paciente B">
                   <div className="grid grid-cols-2 gap-3">
-                    <SelectField label="Servicio" value={form.servicioDestino} onChange={set("servicioDestino")} required />
-                    <Field label="Cama" value={form.camaDestino} onChange={set("camaDestino")} required />
+                    <SelectField label="Servicio" value={form.servicioDestino} onChange={onServicioDestinoConReset} required />
+                    <CamaField label="Cama" servicio={form.servicioDestino} value={form.camaDestino} onChange={set("camaDestino")} required />
                   </div>
                 </Section>
               </div>
@@ -384,6 +392,34 @@ function SelectField({ label, value, onChange, required }: {
           <option key={s} value={s}>{s}</option>
         ))}
       </select>
+    </div>
+  );
+}
+
+function CamaField({ label, servicio, value, onChange, required }: {
+  label: string; servicio: string; value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
+  required?: boolean;
+}) {
+  const camas = servicio ? (CAMAS_POR_SERVICIO[servicio as ServicioHospitalario] ?? []) : [];
+  return (
+    <div>
+      <label className="block text-xs font-medium text-slate-500 mb-1.5">{label} {required && <span className="text-red-500">*</span>}</label>
+      {camas.length > 0 ? (
+        <select value={value} onChange={onChange} className={inputCls}>
+          <option value="">Seleccionar cama...</option>
+          {camas.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
+      ) : (
+        <input
+          type="text"
+          value={value}
+          onChange={onChange as (e: React.ChangeEvent<HTMLInputElement>) => void}
+          className={inputCls}
+          placeholder={!servicio ? "Primero selecciona el servicio" : ""}
+          disabled={!servicio}
+        />
+      )}
     </div>
   );
 }

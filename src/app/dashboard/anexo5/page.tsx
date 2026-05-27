@@ -74,7 +74,7 @@ export default function BandejaAnexo5Page() {
             <ClipboardList size={17} className="text-blue-600 dark:text-blue-400" />
           </div>
           <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100 font-heading">
-            Bandeja de referencias (ESDOMED)
+            Bandeja de Anexo 5
           </h1>
         </div>
         

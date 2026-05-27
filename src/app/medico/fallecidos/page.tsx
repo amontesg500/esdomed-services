@@ -7,7 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { NotificacionFallecido } from "@/types";
 import { Badge } from "@/components/ui/Badge";
 import { HeartPulse, Plus, CheckCircle2, AlertCircle, X, Search } from "lucide-react";
-import { SERVICIOS_HOSPITALARIOS } from "@/lib/servicios";
+import { CAMAS_POR_SERVICIO, SERVICIOS_HOSPITALARIOS, ServicioHospitalario } from "@/lib/servicios";
 
 const inputCls = "w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition";
 
@@ -45,6 +45,9 @@ export default function MedicoFallecidosPage() {
 
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm(prev => ({ ...prev, [field]: e.target.value }));
+
+  const onServicioChange = (e: React.ChangeEvent<HTMLSelectElement>) =>
+    setForm(prev => ({ ...prev, servicio: e.target.value, cama: "" }));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,7 +130,7 @@ export default function MedicoFallecidosPage() {
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1.5">Servicio</label>
-              <select value={form.servicio} onChange={set("servicio")} required className={inputCls}>
+              <select value={form.servicio} onChange={onServicioChange} required className={inputCls}>
                 <option value="">Seleccionar servicio...</option>
                 {SERVICIOS_HOSPITALARIOS.map(s => (
                   <option key={s} value={s}>{s}</option>
@@ -136,7 +139,27 @@ export default function MedicoFallecidosPage() {
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1.5">Cama</label>
-              <input type="text" value={form.cama} onChange={set("cama")} required className={inputCls} />
+              {(() => {
+                const camas = form.servicio
+                  ? (CAMAS_POR_SERVICIO[form.servicio as ServicioHospitalario] ?? [])
+                  : [];
+                return camas.length > 0 ? (
+                  <select value={form.cama} onChange={set("cama")} required className={inputCls}>
+                    <option value="">Seleccionar cama...</option>
+                    {camas.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={form.cama}
+                    onChange={set("cama")}
+                    required
+                    className={inputCls}
+                    placeholder={!form.servicio ? "Primero selecciona el servicio" : ""}
+                    disabled={!form.servicio}
+                  />
+                );
+              })()}
             </div>
             <div className="sm:col-span-2">
               <label className="block text-xs font-medium text-slate-500 mb-1.5">

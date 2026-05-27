@@ -182,7 +182,8 @@ export default function BandejaAnexo5Page() {
                   <div className="text-center space-y-4 mb-8">
                     <h1 className="text-xl font-bold">Anexo 5</h1>
                     <div className="flex flex-col items-center gap-2">
-                      <p className="text-sm font-semibold text-gray-700 tracking-wide uppercase">MINISTERIO DE SALUD</p>
+                      <img src="/logo_minsal.png" alt="Logo MINSAL" className="w-20 object-contain" />
+                      <p className="text-sm font-semibold text-gray-700 tracking-wide uppercase mt-1">MINISTERIO DE SALUD</p>
                     </div>
                     <div className="text-sm space-y-1 mt-4">
                       <p>Dirección Nacional de Hospitales</p>

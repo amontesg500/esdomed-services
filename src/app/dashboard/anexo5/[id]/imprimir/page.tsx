@@ -48,8 +48,9 @@ export default function ImprimirAnexo5Page() {
         <div className="text-center space-y-5 mb-10">
           <h1 className="text-2xl font-bold">Anexo 5</h1>
           
-          <div className="flex flex-col items-center gap-1 mt-6">
-            <p className="text-sm font-semibold tracking-wide uppercase">MINISTERIO DE SALUD</p>
+          <div className="flex flex-col items-center gap-2 mt-6">
+            <img src="/logo_minsal.png" alt="Logo MINSAL" className="w-24 object-contain" />
+            <p className="text-sm font-semibold tracking-wide uppercase mt-2">MINISTERIO DE SALUD</p>
           </div>
           
           <div className="text-sm space-y-1 mt-6">
@@ -68,7 +69,10 @@ export default function ImprimirAnexo5Page() {
         {/* Segundo bloque de títulos interno similar al PDF de ejemplo */}
         <div className="border border-black p-10">
           <div className="text-center space-y-4 mb-8">
-            <p className="text-sm font-semibold tracking-wide uppercase">MINISTERIO DE SALUD</p>
+            <div className="flex flex-col items-center gap-2">
+              <img src="/logo_minsal.png" alt="Logo MINSAL" className="w-20 object-contain" />
+              <p className="text-sm font-semibold tracking-wide uppercase mt-1">MINISTERIO DE SALUD</p>
+            </div>
             <h3 className="font-bold text-lg mt-6">Referencia en SIS</h3>
             <p className="font-bold">Comprobante para el paciente referido</p>
           </div>

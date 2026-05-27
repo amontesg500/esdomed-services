@@ -394,9 +394,13 @@ export default function ControlIngresosPage() {
                   <span className="font-semibold text-slate-900 dark:text-slate-100 text-sm font-mono">
                     Exp. {ingreso.expediente}
                   </span>
-                  {ingreso.ingresoDirectoServicio && (
+                  {ingreso.ingresoDirectoServicio ? (
                     <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 rounded">
                       Directo
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 rounded">
+                      Triage
                     </span>
                   )}
                 </div>

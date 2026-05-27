@@ -110,6 +110,35 @@ export interface SolicitudImpresion {
 }
 
 // ============================================================================
+// Anexo 5 — Comprobante para el paciente referido en el SIS
+// ============================================================================
+
+export type EstadoAnexo5 = "pendiente" | "emitido";
+
+export interface SolicitudAnexo5 {
+  id?: string;
+  medicoId: string;
+  medicoNombre: string;
+  
+  fecha: string; // formato YYYY-MM-DD
+  nombrePaciente: string;
+  referidoDe: string;
+  establecimientoReferencia: string;
+  fechaHoraCita?: string; // Opcional
+  especialidad: string;
+  medicoRefiere: string;
+  establecimientoQueRefiere: string;
+  telefonoEstablecimiento: string;
+
+  estado: EstadoAnexo5;
+  creadoEn: Date;
+
+  emitidoPor?: string;
+  emitidoPorNombre?: string;
+  emitidoEn?: Date;
+}
+
+// ============================================================================
 // Incapacidades — constancias de hospitalización / incapacidad
 // ============================================================================
 

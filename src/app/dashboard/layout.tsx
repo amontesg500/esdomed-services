@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { LayoutDashboard, ArrowRightLeft, HeartPulse, Printer, Users, Inbox, BedDouble, FileText } from "lucide-react";
+import { LayoutDashboard, ArrowRightLeft, HeartPulse, Printer, Users, Inbox, BedDouble, FileText, ClipboardList } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Sidebar } from "@/components/Sidebar";
 
@@ -33,7 +33,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { href: "/dashboard/fallecidos",  label: "Fallecidos",   icon: HeartPulse },
     { href: "/dashboard/impresiones", label: "Impresiones",  icon: Printer },
     ...(verIncapacidades
-      ? [{ href: "/dashboard/incapacidades", label: "Incapacidades", icon: FileText }]
+      ? [
+          { href: "/dashboard/incapacidades", label: "Incapacidades", icon: FileText },
+          { href: "/dashboard/anexo5", label: "Anexo 5", icon: ClipboardList }
+        ]
       : []),
     ...(verPacientes
       ? [{ href: "/dashboard/pacientes", label: "Pacientes", icon: BedDouble }]

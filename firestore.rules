@@ -88,5 +88,13 @@ service cloud.firestore {
       allow update: if isPsicologia() || isTrabajoSocial() || isEsdomed() || isAdmin();
       allow delete: if isAdmin();
     }
+
+    // ─── Anexo 5 ──────────────────────────────────────────────────────────────
+    match /anexo5/{id} {
+      allow read:   if isAuth() && (isStaff() || (isMedico() && resource.data.medicoId == uid()));
+      allow create: if isMedico();
+      allow update: if isStaff();
+      allow delete: if isAdmin();
+    }
   }
 }

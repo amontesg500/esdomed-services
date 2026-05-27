@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { LayoutDashboard, ArrowRightLeft, HeartPulse, Printer, FileText, FileStack } from "lucide-react";
+import { LayoutDashboard, ArrowRightLeft, HeartPulse, Printer, FileText, FileStack, ClipboardList } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Sidebar } from "@/components/Sidebar";
 
@@ -13,6 +13,7 @@ const navItems = [
   { href: "/medico/fallecidos",      label: "Fallecidos",      icon: HeartPulse },
   { href: "/medico/impresiones",     label: "Impresiones",     icon: Printer },
   { href: "/medico/incapacidades",   label: "Incapacidades",   icon: FileText },
+  { href: "/medico/anexo5/nueva",    label: "Anexo 5",         icon: ClipboardList },
 ];
 
 export default function MedicoLayout({ children }: { children: React.ReactNode }) {

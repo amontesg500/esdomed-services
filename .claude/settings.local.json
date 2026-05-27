@@ -28,7 +28,8 @@
       "Bash(npx firebase-tools *)",
       "PowerShell(New-Item *)",
       "Bash(Select-Object -First 50)",
-      "Bash(xargs grep -l \"pdfjs\\\\|PDF\\\\|pdf\")"
+      "Bash(xargs grep -l \"pdfjs\\\\|PDF\\\\|pdf\")",
+      "Bash(Select-Object -First 20)"
     ]
   }
 }

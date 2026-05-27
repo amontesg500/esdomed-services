@@ -82,8 +82,27 @@ export default function NuevaAnexo5Page() {
     }
   };
 
+  const lbl = "block text-xs font-medium text-slate-500 mb-1.5";
+
+  const resetForm = () => {
+    setForm({
+      fecha: hoy,
+      expediente: "",
+      nombrePaciente: "",
+      referidoDe: "",
+      establecimientoReferencia: "",
+      fechaHoraCita: "",
+      especialidad: "",
+      medicoRefiere: profile?.nombre || "",
+      establecimientoQueRefiere: "HOSPITAL NACIONAL EL SALVADOR",
+      telefonoEstablecimiento: "7788-5522, 2594-2100, 2594-2139",
+    });
+    setModalInfo(null);
+  };
+
   return (
-    <div className="p-4 md:p-6 max-w-3xl mx-auto space-y-6">
+    <div className="p-4 md:p-6 max-w-5xl mx-auto h-[calc(100vh-80px)] flex flex-col space-y-4">
+      {/* Modal éxito / error */}
       {modalInfo && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden border border-slate-200 dark:border-slate-800">
@@ -107,41 +126,18 @@ export default function NuevaAnexo5Page() {
             <div className="p-5 space-y-2">
               {modalInfo.tipo === "exito" ? (
                 <>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setForm({
-                        fecha: hoy,
-                        expediente: "",
-                        nombrePaciente: "",
-                        referidoDe: "",
-                        establecimientoReferencia: "",
-                        fechaHoraCita: "",
-                        especialidad: "",
-                        medicoRefiere: profile?.nombre || "",
-                        establecimientoQueRefiere: "HOSPITAL NACIONAL EL SALVADOR",
-                        telefonoEstablecimiento: "7788-5522, 2594-2100, 2594-2139",
-                      });
-                      setModalInfo(null);
-                    }}
-                    className="w-full py-2.5 rounded-lg text-sm font-semibold text-white bg-green-600 hover:bg-green-700 transition-colors"
-                  >
+                  <button type="button" onClick={resetForm}
+                    className="w-full py-2.5 rounded-lg text-sm font-semibold text-white bg-green-600 hover:bg-green-700 transition-colors">
                     Registrar otra referencia
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => router.push("/medico")}
-                    className="w-full py-2.5 rounded-lg text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                  >
+                  <button type="button" onClick={() => router.push("/medico")}
+                    className="w-full py-2.5 rounded-lg text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
                     Volver al inicio
                   </button>
                 </>
               ) : (
-                <button
-                  type="button"
-                  onClick={() => setModalInfo(null)}
-                  className="w-full py-2.5 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors"
-                >
+                <button type="button" onClick={() => setModalInfo(null)}
+                  className="w-full py-2.5 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors">
                   Entendido
                 </button>
               )}
@@ -149,167 +145,107 @@ export default function NuevaAnexo5Page() {
           </div>
         </div>
       )}
+
       {/* Encabezado */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex items-center gap-3 shrink-0">
+        <Link
+          href="/medico"
+          className="p-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 rounded-lg transition-colors"
+        >
+          <ArrowLeft size={18} />
+        </Link>
         <div>
-          <div className="flex items-center gap-3 mb-1">
-            <Link
-              href="/medico"
-              className="p-1.5 -ml-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 rounded-lg transition-colors"
-            >
-              <ArrowLeft size={18} />
-            </Link>
-            <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100 font-heading">
-              Nuevo Anexo 5
-            </h1>
-          </div>
-          <p className="text-sm text-slate-500">
-            Comprobante para el paciente referido en el SIS
-          </p>
+          <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100 font-heading leading-tight">
+            Nuevo Anexo 5
+          </h1>
+          <p className="text-xs text-slate-500">Comprobante para el paciente referido en el SIS</p>
         </div>
       </div>
 
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 md:p-6 shadow-sm">
-        <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-6">Registro de referencia (Médico)</h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div className="col-span-1 md:col-span-2">
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Fecha</label>
-            <input
-              type="date"
-              className={inputCls}
-              value={form.fecha}
-              onChange={(e) => setForm({ ...form, fecha: e.target.value })}
-            />
-          </div>
+      {/* Formulario */}
+      <div className="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm flex flex-col overflow-hidden">
+        <div className="flex-1 overflow-y-auto p-5 md:p-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-x-5 gap-y-4">
 
-          <div className="col-span-1 md:col-span-2">
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-              Expediente del paciente
-              <span className="ml-1.5 text-xs font-normal text-slate-400">(solo referencia interna — no aparece en el impreso)</span>
-            </label>
-            <input
-              type="text"
-              className={inputCls}
-              value={form.expediente}
-              onChange={(e) => setForm({ ...form, expediente: e.target.value })}
-              placeholder="Ej. 1234567"
-            />
-          </div>
+            {/* Fila 1: Fecha + Expediente */}
+            <div>
+              <label className={lbl}>Fecha</label>
+              <input type="date" className={inputCls} value={form.fecha}
+                onChange={(e) => setForm({ ...form, fecha: e.target.value })} />
+            </div>
+            <div className="md:col-span-2">
+              <label className={lbl}>
+                Expediente
+                <span className="ml-1.5 font-normal text-slate-400">(solo referencia interna — no aparece en el impreso)</span>
+              </label>
+              <input type="text" className={inputCls} value={form.expediente}
+                onChange={(e) => setForm({ ...form, expediente: e.target.value })}
+                placeholder="Ej. 1234567" />
+            </div>
 
-          <div className="col-span-1 md:col-span-2">
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">1. Nombre del paciente</label>
-            <input
-              type="text"
-              className={inputCls}
-              value={form.nombrePaciente}
-              onChange={(e) => setForm({ ...form, nombrePaciente: e.target.value })}
-              placeholder="Ej. MARIA ESTHER MONTES MORALES"
-            />
-          </div>
+            {/* Fila 2: Nombre paciente (full) */}
+            <div className="md:col-span-3">
+              <label className={lbl}>1. Nombre del paciente *</label>
+              <input type="text" className={inputCls} value={form.nombrePaciente}
+                onChange={(e) => setForm({ ...form, nombrePaciente: e.target.value })}
+                placeholder="Ej. MARIA ESTHER MONTES MORALES" />
+            </div>
 
-          <div className="col-span-1 md:col-span-2">
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">2. Referido de</label>
-            <input
-              type="text"
-              className={inputCls}
-              value={form.referidoDe}
-              onChange={(e) => setForm({ ...form, referidoDe: e.target.value })}
-              placeholder="Ej. DEMANDA ESPONTANEA"
-            />
-          </div>
+            {/* Fila 3: Referido de + Establecimiento de referencia */}
+            <div>
+              <label className={lbl}>2. Referido de *</label>
+              <input type="text" className={inputCls} value={form.referidoDe}
+                onChange={(e) => setForm({ ...form, referidoDe: e.target.value })}
+                placeholder="Ej. DEMANDA ESPONTANEA" />
+            </div>
+            <div className="md:col-span-2">
+              <label className={lbl}>3. Establecimiento de referencia *</label>
+              <input type="text" className={inputCls} value={form.establecimientoReferencia}
+                onChange={(e) => setForm({ ...form, establecimientoReferencia: e.target.value })}
+                placeholder="Ej. Hospital Nacional Zacamil" />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">3. Establecimiento de referencia</label>
-            <input
-              type="text"
-              className={inputCls}
-              value={form.establecimientoReferencia}
-              onChange={(e) => setForm({ ...form, establecimientoReferencia: e.target.value })}
-              placeholder="Ej. Hospital Nacional Zacamil"
-            />
-          </div>
+            {/* Fila 4: Fecha cita + Especialidad + Médico */}
+            <div>
+              <label className={lbl}>4. Fecha y hora de la cita <span className="font-normal text-slate-400">(opcional)</span></label>
+              <input type="datetime-local" className={inputCls} value={form.fechaHoraCita}
+                onChange={(e) => setForm({ ...form, fechaHoraCita: e.target.value })} />
+            </div>
+            <div>
+              <label className={lbl}>5. Especialidad *</label>
+              <input type="text" className={inputCls} value={form.especialidad}
+                onChange={(e) => setForm({ ...form, especialidad: e.target.value })}
+                placeholder="Ej. CIRUGÍA GENERAL" />
+            </div>
+            <div>
+              <label className={lbl}>6. Médico que refiere</label>
+              <input type="text" className={inputCls} value={form.medicoRefiere}
+                onChange={(e) => setForm({ ...form, medicoRefiere: e.target.value })} />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">3. Fecha y hora de la cita (opcional)</label>
-            <input
-              type="datetime-local"
-              className={inputCls}
-              value={form.fechaHoraCita}
-              onChange={(e) => setForm({ ...form, fechaHoraCita: e.target.value })}
-            />
-          </div>
+            {/* Fila 5: Establecimiento + Teléfono */}
+            <div className="md:col-span-2">
+              <label className={lbl}>7. Establecimiento que refiere</label>
+              <input type="text" className={inputCls} value={form.establecimientoQueRefiere}
+                onChange={(e) => setForm({ ...form, establecimientoQueRefiere: e.target.value })} />
+            </div>
+            <div>
+              <label className={lbl}>Teléfono del establecimiento</label>
+              <input type="text" className={inputCls} value={form.telefonoEstablecimiento}
+                onChange={(e) => setForm({ ...form, telefonoEstablecimiento: e.target.value })} />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">4. Especialidad</label>
-            <input
-              type="text"
-              className={inputCls}
-              value={form.especialidad}
-              onChange={(e) => setForm({ ...form, especialidad: e.target.value })}
-              placeholder="Ej. CIRUGÍA GENERAL"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">5. Médico que refiere</label>
-            <input
-              type="text"
-              className={inputCls}
-              value={form.medicoRefiere}
-              onChange={(e) => setForm({ ...form, medicoRefiere: e.target.value })}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">6. Establecimiento que refiere</label>
-            <input
-              type="text"
-              className={inputCls}
-              value={form.establecimientoQueRefiere}
-              onChange={(e) => setForm({ ...form, establecimientoQueRefiere: e.target.value })}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Teléfono del establecimiento que refiere</label>
-            <input
-              type="text"
-              className={inputCls}
-              value={form.telefonoEstablecimiento}
-              onChange={(e) => setForm({ ...form, telefonoEstablecimiento: e.target.value })}
-            />
           </div>
         </div>
 
-        <div className="mt-8 flex items-center justify-end gap-3 pt-6 border-t border-slate-100 dark:border-slate-800">
-          <button
-            onClick={() => {
-              setForm({
-                fecha: hoy,
-                expediente: "",
-                nombrePaciente: "",
-                referidoDe: "",
-                establecimientoReferencia: "",
-                fechaHoraCita: "",
-                especialidad: "",
-                medicoRefiere: profile?.nombre || "",
-                establecimientoQueRefiere: "HOSPITAL NACIONAL EL SALVADOR",
-                telefonoEstablecimiento: "7788-5522, 2594-2100, 2594-2139",
-              });
-              setModalInfo(null);
-            }}
-            disabled={guardando}
-            className="px-5 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors disabled:opacity-50"
-          >
+        {/* Footer */}
+        <div className="shrink-0 flex items-center justify-end gap-3 px-5 md:px-6 py-4 border-t border-slate-100 dark:border-slate-800">
+          <button onClick={resetForm} disabled={guardando}
+            className="px-5 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors disabled:opacity-50">
             Limpiar
           </button>
-          
-          <button
-            onClick={guardar}
-            disabled={guardando}
-            className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors shadow-sm"
-          >
+          <button onClick={guardar} disabled={guardando}
+            className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors shadow-sm">
             <Save size={16} />
             {guardando ? "Guardando..." : "Guardar referencia"}
           </button>

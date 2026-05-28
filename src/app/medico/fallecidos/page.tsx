@@ -7,7 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { NotificacionFallecido } from "@/types";
 import { Badge } from "@/components/ui/Badge";
 import { HeartPulse, Plus, CheckCircle2, AlertCircle, X, Search } from "lucide-react";
-import { CAMAS_POR_SERVICIO, SERVICIOS_HOSPITALARIOS, ServicioHospitalario } from "@/lib/servicios";
+import { useServicios } from "@/contexts/ServiciosContext";
 
 const inputCls = "w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition";
 
@@ -20,6 +20,7 @@ type ModalState = { type: "success"; expediente: string; nombre: string } | { ty
 
 export default function MedicoFallecidosPage() {
   const { user, profile } = useAuth();
+  const { servicios, getCamas } = useServicios();
   const [notificaciones, setNotificaciones] = useState<NotificacionFallecido[]>([]);
   const [busquedaExpediente, setBusquedaExpediente] = useState("");
   const [fechaDesde, setFechaDesde] = useState("");
@@ -132,7 +133,7 @@ export default function MedicoFallecidosPage() {
               <label className="block text-xs font-medium text-slate-500 mb-1.5">Servicio</label>
               <select value={form.servicio} onChange={onServicioChange} required className={inputCls}>
                 <option value="">Seleccionar servicio...</option>
-                {SERVICIOS_HOSPITALARIOS.map(s => (
+                {servicios.map(s => (
                   <option key={s} value={s}>{s}</option>
                 ))}
               </select>
@@ -140,9 +141,7 @@ export default function MedicoFallecidosPage() {
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1.5">Cama</label>
               {(() => {
-                const camas = form.servicio
-                  ? (CAMAS_POR_SERVICIO[form.servicio as ServicioHospitalario] ?? [])
-                  : [];
+                const camas = form.servicio ? getCamas(form.servicio) : [];
                 return camas.length > 0 ? (
                   <select value={form.cama} onChange={set("cama")} required className={inputCls}>
                     <option value="">Seleccionar cama...</option>

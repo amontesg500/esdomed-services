@@ -5,7 +5,7 @@ import { collection, query, where, getDocs, addDoc, Timestamp } from "firebase/f
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { LogIn, CheckCircle2, AlertCircle, X } from "lucide-react";
-import { SERVICIOS_HOSPITALARIOS } from "@/lib/servicios";
+import { useServicios } from "@/contexts/ServiciosContext";
 import type { Paciente, TipoAltaVivo } from "@/types";
 
 const TIPOS_ALTA: { value: TipoAltaVivo; label: string }[] = [
@@ -22,6 +22,7 @@ type ModalState = { type: "success"; nombre: string } | { type: "error"; message
 
 export default function EnfermeriaAltasPage() {
   const { user, profile } = useAuth();
+  const { servicios } = useServicios();
   const [servicio, setServicio] = useState("");
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [loadingPac, setLoadingPac] = useState(false);
@@ -100,7 +101,7 @@ export default function EnfermeriaAltasPage() {
           <label className="block text-xs font-medium text-slate-500 mb-1.5">Servicio</label>
           <select value={servicio} onChange={e => setServicio(e.target.value)} required className={inputCls}>
             <option value="">Seleccionar servicio...</option>
-            {SERVICIOS_HOSPITALARIOS.map(s => <option key={s} value={s}>{s}</option>)}
+            {servicios.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
 

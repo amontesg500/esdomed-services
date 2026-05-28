@@ -1,96 +1,126 @@
 export const SERVICIOS_HOSPITALARIOS = [
   "Emergencia",
   "Bienestar Magisterial",
-  "UCIN ISBM",
-  "UCI ISBM",
+  "Unidad de Cuidados Intermedios Convenios (ISBM)",
+  "Unidad de Cuidados Intensivos Convenios (ISBM)",
   "Cirugía Hombres 1",
   "Cirugía Mujeres 1",
   "Cirugía Cardiovascular",
-  "Neurocirugia",
+  "Neurocirugía",
   "Dolor y Cuidados Paliativos",
-  "UCIN Adultos",
-  "UCIN Aislados",
-  "UCIN Crónicos",
+  "Unidad de Cuidados Intermedios Adultos MINSAL",
+  "Unidad de Cuidados Intermedios Aislados Adultos",
+  "Unidad de Cuidados Intermedios Crónicos Adultos",
   "Medicina Interna Hombres 1",
   "Medicina Interna Hombres 2",
   "Medicina Interna Hombres 3",
   "Medicina Interna Mujeres 1",
   "Medicina Interna Mujeres 2",
   "Medicina Interna Mujeres 3",
-  "Medicina Interna Cardiología",
-  "Medicina Interna Hematología",
-  "Medicina Interna Aislado",
-  "Medicina Interna Oncologia",
-  "UCI General I",
-  "UCI General II",
-  "UCI Aislados",
-  "UCI Cardiovascular",
-  "UCI Extracorpórea",
-  "UCI Quirúrgica",
-  "UCI Neurointensivos",
-  "UCI Coronarios y Postquirúrgicos (UCCP)",
-  "Evaluación y Observación Médica",
+  "Servicio de Cardiología",
+  "Servicio de Hematología",
+  "Servicio de Aislados",
+  "Servicio de Oncología",
+  "Unidad de Cuidados Intensivos General I Adultos",
+  "Unidad de Cuidados Intensivos Aislados Adultos",
+  "Unidad de Cuidados Intensivos Cardiovascular Adultos",
+  "Unidad de Cuidados Intensivos Extracorpórea Adultos",
+  "Unidad de Cuidados Intensivos Quirúrgicos Adultos",
+  "Unidad de Cuidados Neurointensivos Adultos",
+  "Unidad de Cuidados Coronarios y Posquirúrgicos Cardiovasculares",
+  "Unidad de Evaluación y Observación Médica",
   "Quimioterapia Ambulatoria",
-  "Terapia Intervencionista Endovascular",
-  "Dialisis Peritoneal",
+  "Unidad de Terapia Intervencionista Endovascular",
+  "Diálisis Peritoneal",
   "Terapias Sanguíneas Extracorpórea",
+  "Centro Quirúrgico",
 ] as const;
 
 export type ServicioHospitalario = (typeof SERVICIOS_HOSPITALARIOS)[number];
 
-// ── Camas por servicio ────────────────────────────────────────────────────────
+// ── Helpers de generación de camas ────────────────────────────────────────────
 
+/** PREFIX-01, PREFIX-02, ...  (guión + 2 dígitos) */
 function beds(prefix: string, count: number): string[] {
   return Array.from({ length: count }, (_, i) => `${prefix}-${String(i + 1).padStart(2, "0")}`);
 }
 
-export const CAMAS_POR_SERVICIO: Record<ServicioHospitalario, string[]> = {
-  // Sin camas asignadas (área de primer contacto / servicio sin cama fija)
-  "Emergencia":                              [],
-  "UCI General II":                          [],
+/** 1A, 2A, 3A, ...  (número + sufijo, formato UCI) */
+function bedsNS(count: number, suffix: string): string[] {
+  return Array.from({ length: count }, (_, i) => `${i + 1}${suffix}`);
+}
 
-  // Bienestar Magisterial
-  "Bienestar Magisterial":                   beds("BM", 10),
-  "UCI ISBM":                                beds("UCIBM", 10),
-  "UCIN ISBM":                               beds("UCIMBM", 10),
+/** CR01, CR02, ...  (prefijo + número, sin guión, 2 dígitos) */
+function bedsPN(prefix: string, count: number): string[] {
+  return Array.from({ length: count }, (_, i) => `${prefix}${String(i + 1).padStart(2, "0")}`);
+}
+
+/** 01, 02, ..., 30  (números solos con cero inicial) */
+function bedsZP(count: number): string[] {
+  return Array.from({ length: count }, (_, i) => String(i + 1).padStart(2, "0"));
+}
+
+/** 1, 2, ..., 60  (números solos sin cero inicial) */
+function bedsN(count: number): string[] {
+  return Array.from({ length: count }, (_, i) => String(i + 1));
+}
+
+// ── Camas por servicio ────────────────────────────────────────────────────────
+
+export const CAMAS_POR_SERVICIO: Record<ServicioHospitalario, string[]> = {
+  // Sin camas fijas
+  "Emergencia":                                                        [],
+
+  // Bienestar Magisterial (camas: 1, 2)
+  "Bienestar Magisterial":                                             bedsN(2),
+  "Unidad de Cuidados Intensivos Convenios (ISBM)":                   bedsN(10),
+  "Unidad de Cuidados Intermedios Convenios (ISBM)":                  bedsN(10),
 
   // Cirugía
-  "Cirugía Hombres 1":                       beds("CH", 12),
-  "Cirugía Mujeres 1":                       beds("CM", 12),
-  "Cirugía Cardiovascular":                  beds("CCB", 8),
-  "Neurocirugia":                            beds("NEU", 12),
+  "Cirugía Hombres 1":                                                bedsZP(12),   // 01-12
+  "Cirugía Mujeres 1":                                                bedsZP(12),   // 01-12
+  "Cirugía Cardiovascular":                                           beds("CCV", 8),
+  "Neurocirugía":                                                     beds("NEU", 10),
+
+  // Dolor / Paliativos  (1P, 2P, …, 10P)
+  "Dolor y Cuidados Paliativos":                                      bedsNS(10, "P"),
+
+  // UCIN — Cuidados Intermedios
+  "Unidad de Cuidados Intermedios Adultos MINSAL":                    bedsZP(30),   // 01-30
+  "Unidad de Cuidados Intermedios Aislados Adultos":                  bedsPN("AI", 5),   // AI01-AI05
+  "Unidad de Cuidados Intermedios Crónicos Adultos":                  bedsPN("CR", 21),  // CR01-CR21
 
   // Medicina Interna
-  "Medicina Interna Hombres 1":              beds("MH1", 47),
-  "Medicina Interna Hombres 2":              beds("MH2", 27),
-  "Medicina Interna Hombres 3":              beds("MH3", 22),
-  "Medicina Interna Mujeres 1":              beds("MM1", 52),
-  "Medicina Interna Mujeres 2":              beds("MM2", 32),
-  "Medicina Interna Mujeres 3":              beds("MM3", 34),
-  "Medicina Interna Cardiología":            beds("CAR", 10),
-  "Medicina Interna Hematología":            beds("HEM", 52),
-  "Medicina Interna Aislado":                beds("MAI", 14),
-  "Medicina Interna Oncologia":              beds("ONC", 17),
+  "Medicina Interna Hombres 1":                                       beds("MH1", 45),
+  "Medicina Interna Hombres 2":                                       beds("MH2", 25),
+  "Medicina Interna Hombres 3":                                       beds("MH3", 20),
+  "Medicina Interna Mujeres 1":                                       beds("MM1", 50),
+  "Medicina Interna Mujeres 2":                                       beds("MM2", 30),
+  "Medicina Interna Mujeres 3":                                       beds("MM3", 32),
+  "Servicio de Cardiología":                                          beds("CAR", 8),
+  "Servicio de Hematología":                                          beds("HEM", 50),
+  "Servicio de Aislados":                                             beds("MAI", 12),
+  "Servicio de Oncología":                                            beds("ONC", 15),
 
-  // UCI (Intensivos)
-  "UCI General I":                           beds("1G1", 10),
-  "UCI Aislados":                            beds("A", 7),
-  "UCI Cardiovascular":                      beds("C", 12),
-  "UCI Extracorpórea":                       beds("E", 7),
-  "UCI Quirúrgica":                          beds("Q", 9),
-  "UCI Neurointensivos":                     beds("N", 10),
-  "UCI Coronarios y Postquirúrgicos (UCCP)": beds("1CPC", 7),
+  // UCI — Cuidados Intensivos  (formato: NúmeroSufijo → 1A, 2A, …)
+  "Unidad de Cuidados Intensivos General I Adultos":                  bedsNS(10, "G1"),  // 1G1-10G1
+  "Unidad de Cuidados Intensivos Aislados Adultos":                   bedsNS(8,  "A"),   // 1A-8A
+  "Unidad de Cuidados Intensivos Cardiovascular Adultos":             bedsNS(12, "C"),   // 1C-12C
+  "Unidad de Cuidados Intensivos Extracorpórea Adultos":              bedsNS(9,  "E"),   // 1E-9E
+  "Unidad de Cuidados Intensivos Quirúrgicos Adultos":                bedsNS(9,  "Q"),   // 1Q-9Q
+  "Unidad de Cuidados Neurointensivos Adultos":                       bedsNS(10, "N"),   // 1N-10N
+  "Unidad de Cuidados Coronarios y Posquirúrgicos Cardiovasculares":  bedsNS(7,  "CPC"), // 1CPC-7CPC
 
-  // UCIN (Intermedios)
-  "UCIN Adultos":                            beds("UCIM", 30),
-  "UCIN Aislados":                           beds("AI0", 5),
-  "UCIN Crónicos":                           beds("CR0", 21),
+  // Servicios ambulatorios y especiales
+  "Unidad de Evaluación y Observación Médica":                        beds("EOM", 10),
+  "Quimioterapia Ambulatoria":                                        bedsPN("QTA", 20), // QTA01-QTA20
+  "Unidad de Terapia Intervencionista Endovascular":                  ["UTE-1", "UTE-2", "UTE-3"],
+  "Diálisis Peritoneal":                                              bedsN(60),          // 1-60
+  "Terapias Sanguíneas Extracorpórea":                                bedsN(10),          // 1-10
 
-  // Servicios especiales / ambulatorios
-  "Dolor y Cuidados Paliativos":             beds("P", 10),
-  "Evaluación y Observación Médica":         beds("EOM", 10),
-  "Quimioterapia Ambulatoria":               beds("QTA", 14),
-  "Terapia Intervencionista Endovascular":   beds("UTE", 3),
-  "Dialisis Peritoneal":                     beds("DP", 60),
-  "Terapias Sanguíneas Extracorpórea":       beds("TSE", 10),
+  // Centro Quirúrgico  (Q01-Q05 quirófanos · R1-R12 recuperación)
+  "Centro Quirúrgico": [
+    ...bedsPN("Q", 5),
+    ...Array.from({ length: 12 }, (_, i) => `R${i + 1}`),
+  ],
 };

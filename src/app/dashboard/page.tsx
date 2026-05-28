@@ -126,7 +126,7 @@ export default function DashboardPage() {
         </div>
         {totalPendientes > 0 && (
           <div className="flex items-center gap-2 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-900 text-amber-700 dark:text-amber-400 px-3.5 py-2 rounded-xl text-sm font-medium self-start sm:self-auto">
-            <Clock size={15} />
+            <Clock size={16} />
             {totalPendientes} pendiente{totalPendientes !== 1 ? "s" : ""} en total
           </div>
         )}
